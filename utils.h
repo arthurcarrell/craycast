@@ -71,5 +71,6 @@ typedef struct {
 } Line;
 
 vec2f get_line_intersections(const Line *line1, const Line *line2, int *found);
+float get_distance(vec2f pos1, vec2f pos2);
 // Dynamic Array, can be added to with realloc()
 #endif // !UTILS_H

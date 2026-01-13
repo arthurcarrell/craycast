@@ -31,3 +31,9 @@ vec2f get_line_intersections(const Line *a, const Line *b, int *found) {
     return (vec2f){0, 0};
   }
 }
+
+float get_distance(vec2f start, vec2f end) {
+  float dx = end.x - start.x;
+  float dy = end.y - start.y;
+  return sqrtf(dx * dx + dy * dy); // pythagorus you are the goat
+}
