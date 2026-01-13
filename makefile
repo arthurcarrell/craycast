@@ -1,13 +1,14 @@
 CC = gcc
 CFLAGS = -Wall -Wextra -g
 SDL_FLAGS = -lSDL3
-SRC = main.c
+LD_FLAGS = -lm
+SRC = main.c utils.c
 OBJ = $(SRC:.c=.o)
 TARGET = program
 
 all: $(TARGET)
 $(TARGET): $(OBJ)
-	$(CC) $(OBJ) $(SDL_FLAGS) -o $(TARGET)
+	$(CC) $(OBJ) $(SDL_FLAGS) $(LD_FLAGS) -o $(TARGET)
 
 main.o: main.c utils.h
 
