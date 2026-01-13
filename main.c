@@ -22,7 +22,8 @@ static struct {
   SDL_Window *window;
   SDL_Renderer *renderer;
   SDL_Texture *texture;
-  Line lines[10];
+  Line lines[100]; // will the program segfault after 100 lines are made? yes.
+                   // this is a prototype so thats fine for now
   int line_count;
 
   struct {
