@@ -37,3 +37,19 @@ float get_distance(vec2f start, vec2f end) {
   float dy = end.y - start.y;
   return sqrtf(dx * dx + dy * dy); // pythagorus you are the goat
 }
+
+vec2f add_direction(vec2f pos, float rot, float amount) {
+  return (vec2f){.x = pos.x + amount * cosf(rot),
+                 .y = pos.y + amount * sinf(rot)};
+}
+
+float clampf(float num, float max, float min) {
+  if (num > max) {
+    return max;
+  }
+  if (num < min) {
+    return min;
+  }
+
+  return num;
+}

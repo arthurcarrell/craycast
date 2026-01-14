@@ -2,8 +2,11 @@
 #include <SDL3/SDL_error.h>
 #include <SDL3/SDL_events.h>
 #include <SDL3/SDL_init.h>
+#include <SDL3/SDL_keyboard.h>
+#include <SDL3/SDL_keycode.h>
 #include <SDL3/SDL_mouse.h>
 #include <SDL3/SDL_render.h>
+#include <SDL3/SDL_scancode.h>
 #include <SDL3/SDL_timer.h>
 #include <SDL3/SDL_video.h>
 #include <assert.h>
@@ -11,7 +14,6 @@
 #include <math.h>
 #include <stdbool.h>
 #include <stdio.h>
-#include <stdlib.h>
 
 #include "utils.h"
 
@@ -29,6 +31,9 @@ static struct {
   struct {
     vec2f pos;
     float rot;
+    float fov;
+    int dist;
+    Raycast result[WINDOW_WIDTH];
   } camera;
 
   struct {
@@ -39,6 +44,8 @@ static struct {
 
   bool quit;
   float delta;
+
+  bool map_mode;
 } state;
 
 void init_sdl() {
@@ -65,26 +72,29 @@ void init() {
   // these all need to be instantiated as otherwise C uses garbage values that
   // could literally be anything
   state.line_count = 0;
+
   state.camera.pos = (vec2f){50, WINDOW_HEIGHT / 2};
   state.camera.rot = 0.0;
+  state.camera.fov = M_PI / 3.0f;
+  state.camera.dist = 10000;
 
   state.mouse.pos = (vec2f){0, 0};
   state.mouse.prev_pos = state.mouse.pos;
   state.mouse.even_click = true;
 
   state.delta = 0;
+  state.map_mode = false;
 }
 
 // raycast
-vec2f raycast(vec2f pos, float rot, int distance, int *success) {
+Raycast raycast(vec2f pos, float rot, int distance) {
   // create a line
-  vec2f end = (vec2f){.x = pos.x + distance * cosf(rot),
-                      .y = pos.y + distance * sinf(rot)};
+  vec2f end = add_direction(pos, rot, distance);
   Line ray = (Line){pos, end, {255, 0, 0, 255}};
 
   float closest = distance;
   vec2f closest_vector = end;
-  *success = 0;
+  int success = 0;
 
   for (int i = 0; i < state.line_count; i++) {
     // check if lines intersect
@@ -96,36 +106,39 @@ vec2f raycast(vec2f pos, float rot, int distance, int *success) {
       if (current_distance < closest) {
         closest_vector = result;
         closest = current_distance;
-        *success = 1;
+        success = 1;
       }
     }
   }
 
-  if (*success) {
-    SDL_SetRenderDrawColor(state.renderer, 0, 255, 0, 255);
-    SDL_RenderLine(state.renderer, pos.x, pos.y, closest_vector.x,
-                   closest_vector.y);
-    return closest_vector;
+  if (success) {
+    if (state.map_mode) {
+      SDL_SetRenderDrawColor(state.renderer, 0, 255, 0, 255);
+      SDL_RenderLine(state.renderer, pos.x, pos.y, closest_vector.x,
+                     closest_vector.y);
+    }
+    return (Raycast){1, closest_vector, closest};
   }
-  SDL_SetRenderDrawColor(state.renderer, 255, 0, 0, 255);
-  SDL_RenderLine(state.renderer, ray.start.x, ray.start.y, ray.end.x,
-                 ray.end.y);
-
-  return end;
-}
-void update() {
-  state.camera.pos = state.mouse.pos;
-  float rot = state.camera.rot;
-  for (int i = 0; i < 360; i++) {
-    int res;
-    raycast(state.camera.pos, rot, 10000, &res);
-    rot += 0.01745329; // 1 deg
+  if (state.map_mode) {
+    SDL_SetRenderDrawColor(state.renderer, 255, 0, 0, 255);
+    SDL_RenderLine(state.renderer, ray.start.x, ray.start.y, ray.end.x,
+                   ray.end.y);
   }
-}
 
-void render() {
+  return (Raycast){.hit = 0};
+}
+void update() {}
+
+void render_map() {
+  // draw the raycast rays
+  for (int i = -1; i < WINDOW_WIDTH; i++) {
+    float rot = state.camera.rot - state.camera.fov / 2.0 +
+                (i / (float)WINDOW_WIDTH) * state.camera.fov;
+    raycast(state.camera.pos, rot, state.camera.dist);
+  }
+
   // for each line, draw one
-  for (int i = 0; i < 10 - 1; i++) {
+  for (int i = 0; i < state.line_count; i++) {
     Line line = state.lines[i];
     SDL_SetRenderDrawColor(state.renderer, line.color.r, line.color.g,
                            line.color.b, line.color.a);
@@ -134,15 +147,93 @@ void render() {
   }
 }
 
-void event_mouse_down() {
-  if (!state.mouse.even_click) {
-    state.lines[state.line_count] =
-        (Line){state.mouse.prev_pos, state.mouse.pos, {255, 255, 255, 255}};
-    state.line_count++;
+void render_world() {
+  // do a raycast for each pixel on the screen
+  for (int i = 0; i < WINDOW_WIDTH; i++) {
+    float rot = state.camera.rot - state.camera.fov / 2.0 +
+                (i / (float)WINDOW_WIDTH) * state.camera.fov;
+    Raycast result = raycast(state.camera.pos, rot, state.camera.dist);
+    if (result.hit) {
+      // correct distance to remove the fisheye
+      result.distance = result.distance * cosf(rot - state.camera.rot);
+    }
+    state.camera.result[i] = result;
   }
-  // done
-  state.mouse.prev_pos = state.mouse.pos;
-  state.mouse.even_click = !state.mouse.even_click;
+
+  int tile_size = 20;
+  float projection_dist = (WINDOW_WIDTH / 2.0) / tanf(state.camera.fov / 2.0);
+  // run through each raycast and draw a line on the screen for it.
+  for (int i = 0; i < WINDOW_WIDTH; i++) {
+    Raycast result = state.camera.result[i];
+    float height = (tile_size / result.distance) * projection_dist;
+
+    int start = WINDOW_HEIGHT / 2 - height / 2;
+    int end = WINDOW_HEIGHT / 2 + height / 2;
+
+    int darkness = clampf(result.distance / 1.5, 255, 0);
+    SDL_SetRenderDrawColor(state.renderer, 255 - darkness, 255 - darkness,
+                           255 - darkness, 255);
+    SDL_RenderLine(state.renderer, i, start, i, end);
+  }
+}
+
+void render() {
+  if (state.map_mode) {
+    render_map();
+  } else {
+    render_world();
+  }
+}
+
+void event_mouse_down() {
+  if (state.map_mode) {
+    if (!state.mouse.even_click) {
+      state.lines[state.line_count] =
+          (Line){state.mouse.prev_pos, state.mouse.pos, {255, 255, 255, 255}};
+      state.line_count++;
+    }
+    // done
+    state.mouse.prev_pos = state.mouse.pos;
+    state.mouse.even_click = !state.mouse.even_click;
+  }
+}
+
+void get_keyboard_input() {
+  // get the key pressed
+  const bool *key_states = SDL_GetKeyboardState(0);
+
+  float movespeed = 0.25;
+  float look_sensitivity = 0.25;
+  if (key_states[SDL_SCANCODE_LEFT]) {
+    state.camera.rot -= 0.01745329 * state.delta * look_sensitivity;
+  }
+  if (key_states[SDL_SCANCODE_RIGHT]) {
+    state.camera.rot += 0.01745329 * state.delta * look_sensitivity;
+  }
+  if (key_states[SDL_SCANCODE_W]) {
+    state.camera.pos = add_direction(state.camera.pos, state.camera.rot,
+                                     movespeed * state.delta);
+  }
+  if (key_states[SDL_SCANCODE_S]) {
+    state.camera.pos = add_direction(state.camera.pos, state.camera.rot,
+                                     -(movespeed * state.delta));
+  }
+  if (key_states[SDL_SCANCODE_A]) {
+    state.camera.pos =
+        add_direction(state.camera.pos, state.camera.rot + 1.570796,
+                      -(movespeed * state.delta));
+  }
+  if (key_states[SDL_SCANCODE_D]) {
+    state.camera.pos =
+        add_direction(state.camera.pos, state.camera.rot - 1.570796,
+                      -(movespeed * state.delta));
+  }
+}
+
+void event_key_down(int key) {
+  if (key == SDLK_Z) {
+    state.map_mode = !state.map_mode;
+  }
 }
 
 int main(int argc, char *argv[]) {
@@ -165,10 +256,13 @@ int main(int argc, char *argv[]) {
       case SDL_EVENT_MOUSE_BUTTON_DOWN:
         event_mouse_down();
         break;
+      case SDL_EVENT_KEY_DOWN:
+        event_key_down(event.key.key);
       }
     }
     SDL_SetRenderDrawColor(state.renderer, 0, 0, 0, 255);
     SDL_RenderClear(state.renderer);
+    get_keyboard_input();
     update();
     render();
     SDL_RenderPresent(state.renderer);
