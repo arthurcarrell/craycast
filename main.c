@@ -10,6 +10,7 @@
 #include <SDL3/SDL_timer.h>
 #include <SDL3/SDL_video.h>
 #include <assert.h>
+#include <float.h>
 #include <inttypes.h>
 #include <math.h>
 #include <stdbool.h>
@@ -75,7 +76,18 @@ void destroy_sdl() {
 void init() {
   // these all need to be instantiated as otherwise C uses garbage values that
   // could literally be anything
-  state.line_count = 0;
+  Line first = create_portal_line((vec2f){400, WINDOW_HEIGHT / 2 - 50},
+                                  (vec2f){400, WINDOW_HEIGHT / 2 + 50}, 1, 0);
+  first.id = 0;
+  first.color = (rgba){255, 0, 0, 255};
+  state.lines[0] = first;
+
+  Line second = create_render_line((vec2f){800, WINDOW_HEIGHT / 2 - 50},
+                                   (vec2f){800, WINDOW_HEIGHT / 2 + 50},
+                                   (rgba){0, 0, 255, 255});
+  second.id = 1;
+  state.lines[1] = second;
+  state.line_count = 2;
 
   state.camera.pos = (vec2f){50, WINDOW_HEIGHT / 2};
   state.camera.rot = 0.0;
@@ -95,7 +107,7 @@ void init() {
 }
 
 // raycast
-Raycast raycast(vec2f pos, float rot, int distance) {
+Raycast raycast(vec2f pos, float rot, float distance) {
   // create a line
   vec2f end = add_direction(pos, rot, distance);
   Line ray = (Line){pos, end, {255, 0, 0, 255}};
@@ -105,13 +117,13 @@ Raycast raycast(vec2f pos, float rot, int distance) {
   int line_id = -1;
   int success = 0;
 
+  // get each line and get the closest one that intersects with the ray
   for (int i = 0; i < state.line_count; i++) {
     // check if lines intersect
     int found;
     vec2f result = get_line_intersections(&ray, &state.lines[i], &found);
     if (found) {
       float current_distance = get_distance(pos, result);
-      // check if closest, if so, overwrite
       if (current_distance < closest) {
         closest_vector = result;
         closest = current_distance;
@@ -121,7 +133,42 @@ Raycast raycast(vec2f pos, float rot, int distance) {
     }
   }
 
-  if (success) {
+  // THINKING WITH PORTALS
+  if (success && state.lines[line_id].flags & LINE_FLAG_PORTAL) {
+    // this is a portal, so raycast from the line on the otherside
+    Line line = state.lines[line_id];
+    Line output = state.lines[line.portal.output_id];
+
+    // get the percentage of how far across the line the point is
+    float percent = get_line_percent(closest_vector, line);
+
+    vec2f exit = {output.end.x - output.start.x, output.end.y - output.start.y};
+    vec2f raypos = {output.start.x + exit.x * percent,
+                    output.start.y + exit.y * percent};
+
+    float rayrot = line.portal.output_rot + rot;
+
+    // if in map mode draw a purple line to indicate that the POV is going
+    // through a portal
+    if (state.map_mode) {
+      SDL_SetRenderDrawColor(state.renderer, 255, 0, 255, 255);
+      SDL_RenderLine(state.renderer, pos.x, pos.y, closest_vector.x,
+                     closest_vector.y);
+    }
+
+    // move the position slightly forward so that it doesnt collide with itself
+    raypos = add_direction(raypos, rayrot, 1);
+
+    // shoot a new ray and add the distance so that it is not reset on return
+    Raycast newray = raycast(raypos, rayrot, distance - closest);
+
+    if (newray.hit) {
+      newray.distance += closest;
+    }
+    return newray;
+
+  } else if (success) {
+    // draw a green line to represent success
     if (state.map_mode) {
       SDL_SetRenderDrawColor(state.renderer, 0, 255, 0, 255);
       SDL_RenderLine(state.renderer, pos.x, pos.y, closest_vector.x,
@@ -130,6 +177,7 @@ Raycast raycast(vec2f pos, float rot, int distance) {
     return (Raycast){1, closest_vector, closest, line_id};
   }
   if (state.map_mode) {
+    // draw a red line to indicate failure
     SDL_SetRenderDrawColor(state.renderer, 255, 0, 0, 255);
     SDL_RenderLine(state.renderer, ray.start.x, ray.start.y, ray.end.x,
                    ray.end.y);
@@ -150,8 +198,12 @@ void render_map() {
   // for each line, draw one
   for (int i = 0; i < state.line_count; i++) {
     Line line = state.lines[i];
-    SDL_SetRenderDrawColor(state.renderer, line.color.r, line.color.g,
-                           line.color.b, line.color.a);
+    if (!is_on_line(state.mouse.pos, line, 1000)) {
+      SDL_SetRenderDrawColor(state.renderer, line.color.r, line.color.g,
+                             line.color.b, line.color.a);
+    } else {
+      SDL_SetRenderDrawColor(state.renderer, 0, 174, 255, 255);
+    }
     SDL_RenderLine(state.renderer, line.start.x, line.start.y, line.end.x,
                    line.end.y);
   }
@@ -185,8 +237,8 @@ void render_world() {
     Raycast result = state.camera.result[i];
     float height = (tile_size / result.distance) * projection_dist;
 
-    int start = WINDOW_HEIGHT / 2 - height / 2;
-    int end = WINDOW_HEIGHT / 2 + height / 2;
+    int start = WINDOW_HEIGHT / 2.0 - height / 2;
+    int end = WINDOW_HEIGHT / 2.0 + height / 2;
 
     rgba color = state.lines[result.line_id].color;
 
@@ -212,10 +264,10 @@ void render() {
 void event_mouse_down() {
   if (state.map_mode) {
     if (!editor.even_click) {
-      state.lines[state.line_count] =
-          (Line){editor.last_click_pos, state.mouse.pos, editor.color,
-                 state.line_count};
-      state.line_count++;
+      Line line = create_render_line(editor.last_click_pos, state.mouse.pos,
+                                     editor.color);
+      line.id = state.line_count;
+      state.lines[state.line_count++] = line;
     }
     // done
     editor.last_click_pos = state.mouse.pos;
@@ -227,7 +279,7 @@ void get_keyboard_input() {
   // get the key pressed
   const bool *key_states = SDL_GetKeyboardState(0);
 
-  float movespeed = 0.25;
+  float movespeed = 0.25 / 2;
   float look_sensitivity = 0.25;
   if (key_states[SDL_SCANCODE_LEFT]) {
     state.camera.rot -= 0.01745329 * state.delta * look_sensitivity;
