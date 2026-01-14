@@ -17,8 +17,8 @@
 
 #include "utils.h"
 
-#define WINDOW_WIDTH 720
-#define WINDOW_HEIGHT 480
+#define WINDOW_WIDTH 1920
+#define WINDOW_HEIGHT 1080
 
 static struct {
   SDL_Window *window;
@@ -38,8 +38,6 @@ static struct {
 
   struct {
     vec2f pos;
-    vec2f prev_pos; // used to get the first clicks place
-    bool even_click;
   } mouse;
 
   bool quit;
@@ -47,6 +45,12 @@ static struct {
 
   bool map_mode;
 } state;
+
+static struct {
+  rgba color;
+  bool even_click;
+  vec2f last_click_pos;
+} editor;
 
 void init_sdl() {
   state.quit = false;
@@ -76,14 +80,18 @@ void init() {
   state.camera.pos = (vec2f){50, WINDOW_HEIGHT / 2};
   state.camera.rot = 0.0;
   state.camera.fov = M_PI / 3.0f;
-  state.camera.dist = 10000;
+  state.camera.dist =
+      1000; // darkness means that after ~300-400 nothing will show anyway
 
   state.mouse.pos = (vec2f){0, 0};
-  state.mouse.prev_pos = state.mouse.pos;
-  state.mouse.even_click = true;
 
   state.delta = 0;
   state.map_mode = false;
+
+  // editor
+  editor.even_click = true;
+  editor.color = (rgba){255, 255, 255, 255};
+  editor.last_click_pos = (vec2f){0, 0};
 }
 
 // raycast
@@ -94,6 +102,7 @@ Raycast raycast(vec2f pos, float rot, int distance) {
 
   float closest = distance;
   vec2f closest_vector = end;
+  int line_id = -1;
   int success = 0;
 
   for (int i = 0; i < state.line_count; i++) {
@@ -106,6 +115,7 @@ Raycast raycast(vec2f pos, float rot, int distance) {
       if (current_distance < closest) {
         closest_vector = result;
         closest = current_distance;
+        line_id = state.lines[i].id;
         success = 1;
       }
     }
@@ -117,7 +127,7 @@ Raycast raycast(vec2f pos, float rot, int distance) {
       SDL_RenderLine(state.renderer, pos.x, pos.y, closest_vector.x,
                      closest_vector.y);
     }
-    return (Raycast){1, closest_vector, closest};
+    return (Raycast){1, closest_vector, closest, line_id};
   }
   if (state.map_mode) {
     SDL_SetRenderDrawColor(state.renderer, 255, 0, 0, 255);
@@ -145,6 +155,14 @@ void render_map() {
     SDL_RenderLine(state.renderer, line.start.x, line.start.y, line.end.x,
                    line.end.y);
   }
+
+  // draw a red line to indicate a line in progress
+  if (!editor.even_click) {
+    SDL_SetRenderDrawColor(state.renderer, 119, 118, 123, 128);
+    SDL_RenderLine(state.renderer, editor.last_click_pos.x,
+                   editor.last_click_pos.y, state.mouse.pos.x,
+                   state.mouse.pos.y);
+  }
 }
 
 void render_world() {
@@ -170,9 +188,15 @@ void render_world() {
     int start = WINDOW_HEIGHT / 2 - height / 2;
     int end = WINDOW_HEIGHT / 2 + height / 2;
 
+    rgba color = state.lines[result.line_id].color;
+
     int darkness = clampf(result.distance / 1.5, 255, 0);
-    SDL_SetRenderDrawColor(state.renderer, 255 - darkness, 255 - darkness,
-                           255 - darkness, 255);
+
+    int r = clamp(color.r - darkness, 255, 0);
+    int g = clamp(color.g - darkness, 255, 0);
+    int b = clamp(color.b - darkness, 255, 0);
+
+    SDL_SetRenderDrawColor(state.renderer, r, g, b, color.a);
     SDL_RenderLine(state.renderer, i, start, i, end);
   }
 }
@@ -187,14 +211,15 @@ void render() {
 
 void event_mouse_down() {
   if (state.map_mode) {
-    if (!state.mouse.even_click) {
+    if (!editor.even_click) {
       state.lines[state.line_count] =
-          (Line){state.mouse.prev_pos, state.mouse.pos, {255, 255, 255, 255}};
+          (Line){editor.last_click_pos, state.mouse.pos, editor.color,
+                 state.line_count};
       state.line_count++;
     }
     // done
-    state.mouse.prev_pos = state.mouse.pos;
-    state.mouse.even_click = !state.mouse.even_click;
+    editor.last_click_pos = state.mouse.pos;
+    editor.even_click = !editor.even_click;
   }
 }
 
@@ -231,6 +256,24 @@ void get_keyboard_input() {
 }
 
 void event_key_down(int key) {
+  if (state.map_mode) {
+    if (key == SDLK_W) {
+      editor.color = (rgba){255, 255, 255, 255};
+    } else if (key == SDLK_R) {
+      editor.color = (rgba){255, 0, 0, 255};
+    } else if (key == SDLK_Y) {
+      editor.color = (rgba){255, 255, 0, 255};
+    } else if (key == SDLK_G) {
+      editor.color = (rgba){0, 255, 0, 255};
+    } else if (key == SDLK_T) {
+      editor.color = (rgba){0, 255, 255, 255};
+    } else if (key == SDLK_B) {
+      editor.color = (rgba){0, 0, 255, 255};
+    } else if (key == SDLK_P) {
+      editor.color = (rgba){255, 0, 255, 255};
+    }
+  }
+
   if (key == SDLK_Z) {
     state.map_mode = !state.map_mode;
   }

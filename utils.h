@@ -68,12 +68,14 @@ typedef struct {
   vec2f start;
   vec2f end;
   rgba color;
+  int id;
 } Line;
 
 typedef struct {
   int hit;
   vec2f pos;
   float distance;
+  int line_id;
 } Raycast;
 
 vec2f get_line_intersections(const Line *line1, const Line *line2, int *found);
@@ -81,5 +83,6 @@ float get_distance(vec2f pos1, vec2f pos2);
 vec2f add_direction(vec2f pos, float rot, float amount);
 
 float clampf(float num, float max, float min);
+int clamp(int num, int max, int min);
 // Dynamic Array, can be added to with realloc()
 #endif // !UTILS_H
