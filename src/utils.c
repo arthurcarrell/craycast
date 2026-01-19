@@ -3,8 +3,6 @@
 #include <float.h>
 #include <math.h>
 #include <stdbool.h>
-#include <stdio.h>
-#include <stdlib.h>
 
 vec2f get_line_intersections(const Line *a, const Line *b, int *found) {
   // https://en.wikipedia.org/wiki/Line%E2%80%93line_intersection
@@ -45,6 +43,13 @@ vec2f add_direction(vec2f pos, float rot, float amount) {
                  .y = pos.y + amount * sinf(rot)};
 }
 
+float get_direction(vec2f start, vec2f end) {
+  return atan2f(end.y - start.y, end.x - start.x);
+}
+
+float deg_to_radians(float degrees) { return degrees * (M_PI / 180); }
+
+// returns a float that cannot exceed max and cannot go below min
 float clampf(float num, float max, float min) {
   if (num > max) {
     return max;
@@ -67,7 +72,7 @@ int clamp(int num, int max, int min) {
   return num;
 }
 
-// Lines
+// Line helper functions - unused at the moment
 Line create_simple_line(vec2f start, vec2f end) {
   return (Line){.start = start, .end = end, .flags = 0};
 }
@@ -80,15 +85,14 @@ Line create_render_line(vec2f start, vec2f end, rgba color) {
   return (Line){.start = start, .end = end, .color = color};
 }
 
-Line create_portal_line(vec2f start, vec2f end, int output_id,
-                        float output_rot) {
+Line create_portal_line(vec2f start, vec2f end, int output_id, int flipped) {
   return (Line){.start = start,
                 .end = end,
-                .portal = {.output_id = output_id, .output_rot = output_rot},
+                .portal = {.output_id = output_id, .flipped = flipped},
                 .flags = LINE_FLAG_PORTAL};
 }
 
-int is_on_line(vec2f pos, Line line, float precision) {
+int is_on_line(vec2f pos, Line line, float tolerance) {
   // https://stackoverflow.com/questions/11907947/how-to-check-if-a-point-lies-on-a-line-between-2-other-points
   float dxc = pos.x - line.start.x;
   float dyc = pos.y - line.start.y;
@@ -96,8 +100,17 @@ int is_on_line(vec2f pos, Line line, float precision) {
   float dyl = line.end.y - line.start.y;
 
   float cross = dxc * dyl - dyc * dxl;
+  float dot = dxc * dxl + dyc * dyl;
 
-  if (fabsf(cross) > precision) {
+  if (dot < 0) {
+    return 0;
+  }
+
+  if (dot > pow(get_distance(line.start, line.end), 2)) {
+    return false;
+  }
+
+  if (fabsf(cross) > tolerance) {
     return 0;
   } else {
     return 1;

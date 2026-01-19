@@ -28,6 +28,7 @@ typedef struct {
 } rgba;
 
 // In its most simple form, a struct that has a start and an end point
+// Gets pretty complicated from there on out though - may be refactored
 typedef struct {
   vec2f start;
   vec2f end;
@@ -39,19 +40,6 @@ typedef struct {
     int flipped;
   } portal;
 } Line;
-
-// The result of a raycast:
-// hit represents if the raycast was successful.
-// If the hit was unsuccessful, none of the other variables are initalised.
-// pos is the position where the ray hit
-// distance is how far the point was from where the ray started
-// line_id is the ID of the line that was hit.
-typedef struct {
-  int hit;
-  vec2f pos;
-  float distance;
-  int line_id;
-} Raycast;
 
 // --- Line Intersections (the whole project runs on this) ---
 
@@ -70,6 +58,8 @@ float get_distance(vec2f pos1, vec2f pos2);
 vec2f add_direction(vec2f pos, float rot, float amount);
 // Returns the direction that 'start' would need to face to look at 'end'
 float get_direction(vec2f start, vec2f end);
+// Converts degrees to radians
+float deg_to_radians(float degrees);
 
 // --- Clamp functions ---
 
