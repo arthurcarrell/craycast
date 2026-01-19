@@ -3,50 +3,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define DEFINE_DYNARR_STRUCT(type)                                             \
-  typedef struct {                                                             \
-    int size;                                                                  \
-    type *value;                                                               \
-    int length;                                                                \
-  } type##DynArray
-
-#define DEFINE_DYNARR_INIT(type)                                               \
-  type##DynArray type##DynArray_initalise(type set_size) {                     \
-    type##DynArray dynarr = (type##DynArray){};                                \
-    dynarr.size = set_size;                                                    \
-    dynarr.value = malloc(set_size * sizeof(type));                            \
-    dynarr.length = 0;                                                         \
-    if (dynarr.value == NULL) {                                                \
-      printf("Could not initalise dynamic array!\n");                          \
-      return (type##DynArray){.size = 0, .value = NULL, .length = 0};          \
-    }                                                                          \
-    return dynarr;                                                             \
-  }
-
-#define DEFINE_DYNARR_PUSH(type)                                               \
-  void type##DynArray_push(type##DynArray *dynamicArray, type value) {         \
-    if (dynamicArray->length >= dynamicArray->size) {                          \
-      dynamicArray->size =                                                     \
-          (dynamicArray->size == 0) ? 1 : dynamicArray->size * 2;              \
-      int *newptr =                                                            \
-          realloc(dynamicArray->value, dynamicArray->size * sizeof(type));     \
-      if (newptr == NULL) {                                                    \
-        printf("Could not add to dynamic array!\n");                           \
-        return;                                                                \
-      }                                                                        \
-      dynamicArray->value = newptr;                                            \
-    }                                                                          \
-    dynamicArray->value[dynamicArray->length] = value;                         \
-    dynamicArray->length++;                                                    \
-  }
-
-#define DEFINE_DYNAMIC_ARRAY(type)                                             \
-  DEFINE_DYNARR_STRUCT(type);                                                  \
-  DEFINE_DYNARR_INIT(type);                                                    \
-  DEFINE_DYNARR_PUSH(type);
-
 // Line flags
 #define LINE_FLAG_PORTAL (1u << 1)
+#define LINE_FLAG_PORTAL_EXIT (1u << 2)
+
+// Helper macro
+#define NINETY_DEGINRAD 1.570796
 
 typedef struct {
   int x;
@@ -65,8 +27,7 @@ typedef struct {
   int a;
 } rgba;
 
-// Line:
-
+// In its most simple form, a struct that has a start and an end point
 typedef struct {
   vec2f start;
   vec2f end;
@@ -75,10 +36,16 @@ typedef struct {
   unsigned int flags;
   struct {
     int output_id;
-    float output_rot;
+    int flipped;
   } portal;
 } Line;
 
+// The result of a raycast:
+// hit represents if the raycast was successful.
+// If the hit was unsuccessful, none of the other variables are initalised.
+// pos is the position where the ray hit
+// distance is how far the point was from where the ray started
+// line_id is the ID of the line that was hit.
 typedef struct {
   int hit;
   vec2f pos;
@@ -86,20 +53,45 @@ typedef struct {
   int line_id;
 } Raycast;
 
+// --- Line Intersections (the whole project runs on this) ---
+
+// Checks if two lines touch each other at any point.
+// Found is 1 if the lines touch and is 0 if they dont.
+// The value returned is the point at which the two lines touch.
+// If they dont, the point is returned as 0,0 - but found should be used to
+// check if they do.
 vec2f get_line_intersections(const Line *line1, const Line *line2, int *found);
+
+// --- Direction and Distance ---
+
+// Returns the distance between two points
 float get_distance(vec2f pos1, vec2f pos2);
+// Returns a point translated using a rotation and the amount to move by
 vec2f add_direction(vec2f pos, float rot, float amount);
+// Returns the direction that 'start' would need to face to look at 'end'
+float get_direction(vec2f start, vec2f end);
+
+// --- Clamp functions ---
+
+// returns a float that cannot exceed max and cannot go below min
 float clampf(float num, float max, float min);
+// returns an int that cannot exceed max and cannot go below min
 int clamp(int num, int max, int min);
 
-// lines
+//  --- Line functions ---
 Line create_simple_line(vec2f start, vec2f end);
 Line create_line_with_flags(vec2f start, vec2f end, unsigned int flags);
 Line create_render_line(vec2f start, vec2f end, rgba color);
-Line create_portal_line(vec2f start, vec2f end, int output_id,
-                        float output_rot);
+Line create_portal_line(vec2f start, vec2f end, int output_id, int flipped);
 
-int is_on_line(vec2f pos, Line line, float precision);
+// Checks if a point is on a line. Returns 0 for no and 1 for yes.
+// tolerance is how far the point can be from the line for it to still count
+// as being on the line. For most uses, tolerance should be 0 but for uses like
+// checking if the mouse is touching the line, tolerance should be high to allow
+// easier interaction.
+int is_on_line(vec2f pos, Line line, float tolerance);
+
+// Returns a decimal percentage on how far a position is on the line.
+// 0 is the start and 1 is the end.
 float get_line_percent(vec2f pos, Line line);
-// Dynamic Array, can be added to with realloc()
 #endif // !UTILS_H

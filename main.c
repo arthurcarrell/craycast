@@ -51,6 +51,8 @@ static struct {
   rgba color;
   bool even_click;
   vec2f last_click_pos;
+  bool portal_mode;
+  int last_line_id;
 } editor;
 
 void init_sdl() {
@@ -76,24 +78,13 @@ void destroy_sdl() {
 void init() {
   // these all need to be instantiated as otherwise C uses garbage values that
   // could literally be anything
-  Line first = create_portal_line((vec2f){400, WINDOW_HEIGHT / 2 - 50},
-                                  (vec2f){400, WINDOW_HEIGHT / 2 + 50}, 1, 0);
-  first.id = 0;
-  first.color = (rgba){255, 0, 0, 255};
-  state.lines[0] = first;
-
-  Line second = create_render_line((vec2f){800, WINDOW_HEIGHT / 2 - 50},
-                                   (vec2f){800, WINDOW_HEIGHT / 2 + 50},
-                                   (rgba){0, 0, 255, 255});
-  second.id = 1;
-  state.lines[1] = second;
-  state.line_count = 2;
+  state.line_count = 0;
 
   state.camera.pos = (vec2f){50, WINDOW_HEIGHT / 2};
   state.camera.rot = 0.0;
   state.camera.fov = M_PI / 3.0f;
   state.camera.dist =
-      1000; // darkness means that after ~300-400 nothing will show anyway
+      500; // darkness means that after ~300-400 nothing will show anyway
 
   state.mouse.pos = (vec2f){0, 0};
 
@@ -104,6 +95,8 @@ void init() {
   editor.even_click = true;
   editor.color = (rgba){255, 255, 255, 255};
   editor.last_click_pos = (vec2f){0, 0};
+  editor.portal_mode = false;
+  editor.last_line_id = -1;
 }
 
 // raycast
@@ -139,14 +132,32 @@ Raycast raycast(vec2f pos, float rot, float distance) {
     Line line = state.lines[line_id];
     Line output = state.lines[line.portal.output_id];
 
+    // check that the other portal has the PORTAL_EXIT flag, if they dont, quit.
+    if (!(output.flags & LINE_FLAG_PORTAL_EXIT)) {
+      printf("Error! Line %d is used in a portal, but is not marked as a "
+             "portal exit.\n",
+             output.id);
+      destroy_sdl();
+      exit(1);
+    }
+
     // get the percentage of how far across the line the point is
     float percent = get_line_percent(closest_vector, line);
 
+    // exit and raypos is black magic I looked up
     vec2f exit = {output.end.x - output.start.x, output.end.y - output.start.y};
     vec2f raypos = {output.start.x + exit.x * percent,
                     output.start.y + exit.y * percent};
 
-    float rayrot = line.portal.output_rot + rot;
+    // get the relative angle of the ray from the portal
+    float relrot = rot - get_direction(line.start, line.end);
+
+    // check if flipped - if yes, flip the relative rotation
+    if (output.portal.flipped) {
+      relrot = -relrot;
+    }
+    // calculate the final angle for the exit line
+    float rayrot = get_direction(output.start, output.end) + relrot;
 
     // if in map mode draw a purple line to indicate that the POV is going
     // through a portal
@@ -196,19 +207,30 @@ void render_map() {
   }
 
   // for each line, draw one
+  int precision = 1000;
   for (int i = 0; i < state.line_count; i++) {
     Line line = state.lines[i];
-    if (!is_on_line(state.mouse.pos, line, 1000)) {
+    if (!is_on_line(state.mouse.pos, line, precision)) {
       SDL_SetRenderDrawColor(state.renderer, line.color.r, line.color.g,
                              line.color.b, line.color.a);
+
+      if (line.flags & LINE_FLAG_PORTAL || line.flags & LINE_FLAG_PORTAL_EXIT) {
+        if (is_on_line(state.mouse.pos, state.lines[line.portal.output_id],
+                       precision)) {
+          SDL_SetRenderDrawColor(state.renderer, 255, 136, 0, 255);
+        }
+      }
     } else {
       SDL_SetRenderDrawColor(state.renderer, 0, 174, 255, 255);
     }
     SDL_RenderLine(state.renderer, line.start.x, line.start.y, line.end.x,
                    line.end.y);
+
+    if (line.flags & LINE_FLAG_PORTAL_EXIT) {
+    }
   }
 
-  // draw a red line to indicate a line in progress
+  // draw a gray line to indicate a line in progress
   if (!editor.even_click) {
     SDL_SetRenderDrawColor(state.renderer, 119, 118, 123, 128);
     SDL_RenderLine(state.renderer, editor.last_click_pos.x,
@@ -261,20 +283,58 @@ void render() {
   }
 }
 
+// Ran every time a mouse button is pressed
 void event_mouse_down() {
   if (state.map_mode) {
-    if (!editor.even_click) {
-      Line line = create_render_line(editor.last_click_pos, state.mouse.pos,
-                                     editor.color);
-      line.id = state.line_count;
-      state.lines[state.line_count++] = line;
+    if (!editor.portal_mode) {
+      if (!editor.even_click) {
+        Line line = create_render_line(editor.last_click_pos, state.mouse.pos,
+                                       editor.color);
+        line.id = state.line_count;
+        state.lines[state.line_count++] = line;
+      }
+
+      editor.last_click_pos = state.mouse.pos;
+    } else if (state.map_mode && editor.portal_mode) {
+      for (int i = 0; i < state.line_count; i++) {
+        Line *line = &state.lines[i];
+        if (is_on_line(state.mouse.pos, *line, 1000)) {
+          if (editor.even_click) {
+            editor.last_line_id = line->id;
+            editor.last_click_pos = line->end;
+          } else {
+            // turn the previous line into a portal and the current line into a
+            // portal exit
+            Line *prev = &state.lines[editor.last_line_id];
+
+            if (prev != line) {
+              // check if changing portal target
+              if (prev->flags & LINE_FLAG_PORTAL) {
+                // yes, so strip the portal output flag from the portal output
+                state.lines[prev->portal.output_id].flags &=
+                    ~LINE_FLAG_PORTAL_EXIT;
+
+                // will be overwritten but just in case
+                prev->portal.output_id = 0;
+              }
+              prev->portal.output_id = line->id;
+              prev->flags |= LINE_FLAG_PORTAL;
+
+              line->flags |= LINE_FLAG_PORTAL_EXIT;
+              line->portal.output_id = prev->id;
+            }
+            // disable portal mode
+            editor.portal_mode = false;
+            editor.last_click_pos = state.mouse.pos;
+          }
+        }
+      }
     }
-    // done
-    editor.last_click_pos = state.mouse.pos;
     editor.even_click = !editor.even_click;
   }
 }
 
+// Keyboard input
 void get_keyboard_input() {
   // get the key pressed
   const bool *key_states = SDL_GetKeyboardState(0);
@@ -297,12 +357,12 @@ void get_keyboard_input() {
   }
   if (key_states[SDL_SCANCODE_A]) {
     state.camera.pos =
-        add_direction(state.camera.pos, state.camera.rot + 1.570796,
+        add_direction(state.camera.pos, state.camera.rot + NINETY_DEGINRAD,
                       -(movespeed * state.delta));
   }
   if (key_states[SDL_SCANCODE_D]) {
     state.camera.pos =
-        add_direction(state.camera.pos, state.camera.rot - 1.570796,
+        add_direction(state.camera.pos, state.camera.rot - NINETY_DEGINRAD,
                       -(movespeed * state.delta));
   }
 }
@@ -323,14 +383,24 @@ void event_key_down(int key) {
       editor.color = (rgba){0, 0, 255, 255};
     } else if (key == SDLK_P) {
       editor.color = (rgba){255, 0, 255, 255};
+    } else if (key == SDLK_X) {
+      editor.portal_mode = !editor.portal_mode;
+      editor.even_click = true;
+    } else if (key == SDLK_F && editor.last_line_id != -1) {
+      if (state.lines[editor.last_line_id].flags & LINE_FLAG_PORTAL_EXIT) {
+        state.lines[editor.last_line_id].portal.flipped =
+            !state.lines[editor.last_line_id].portal.flipped;
+      }
     }
   }
 
   if (key == SDLK_Z) {
     state.map_mode = !state.map_mode;
+    editor.portal_mode = false;
   }
 }
 
+// Where the program actually runs, keeps going until quit is true
 int main(int argc, char *argv[]) {
   init_sdl();
   init();
@@ -364,10 +434,11 @@ int main(int argc, char *argv[]) {
     SDL_Delay(
         10); // bandaid fix, I should implement an actual FPS cap but I was
              // literally hearing whistling while this used 100% of my CPU
-
     // frame ends
     state.delta = SDL_GetTicks() - start;
   }
+
+  // The program has now ended, destroy SDL
   destroy_sdl();
   return 0;
 }
