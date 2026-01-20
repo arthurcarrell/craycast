@@ -1,6 +1,7 @@
 #ifndef STATE_H
 #define STATE_H
 
+#include "line.h"
 #include "raycast.h"
 #include "utils.h"
 #include <SDL3/SDL.h>

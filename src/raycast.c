@@ -1,6 +1,6 @@
 #include "raycast.h"
 #include "editor.h"
-#include "sdl.h"
+#include "framebuf.h"
 #include "state.h"
 #include "utils.h"
 
@@ -41,8 +41,6 @@ Raycast raycast(vec2f pos, float rot, float distance) {
       printf("Error! Line %d is used in a portal, but is not marked as a "
              "portal exit.\n",
              output.id);
-      destroy_sdl();
-      exit(1);
     }
 
     // get the percentage of how far across the line the point is
@@ -66,9 +64,8 @@ Raycast raycast(vec2f pos, float rot, float distance) {
     // if in map mode draw a purple line to indicate that the POV is going
     // through a portal
     if (editor.map_mode) {
-      SDL_SetRenderDrawColor(state.renderer, 255, 0, 255, 255);
-      SDL_RenderLine(state.renderer, pos.x, pos.y, closest_vector.x,
-                     closest_vector.y);
+      framebuf_line_s(&framebuf, pos.x, pos.y, closest_vector.x,
+                      closest_vector.y, (rgba){255, 0, 255, 255});
     }
 
     // move the position slightly forward so that it doesnt collide with itself
@@ -85,17 +82,15 @@ Raycast raycast(vec2f pos, float rot, float distance) {
   } else if (success) {
     // draw a green line to represent success
     if (editor.map_mode) {
-      SDL_SetRenderDrawColor(state.renderer, 0, 255, 0, 255);
-      SDL_RenderLine(state.renderer, pos.x, pos.y, closest_vector.x,
-                     closest_vector.y);
+      framebuf_line_s(&framebuf, pos.x, pos.y, closest_vector.x,
+                      closest_vector.y, (rgba){0, 255, 0, 255});
     }
     return (Raycast){1, closest_vector, closest, line_id};
   }
   if (editor.map_mode) {
     // draw a red line to indicate failure
-    SDL_SetRenderDrawColor(state.renderer, 255, 0, 0, 255);
-    SDL_RenderLine(state.renderer, ray.start.x, ray.start.y, ray.end.x,
-                   ray.end.y);
+    framebuf_line_s(&framebuf, ray.start.x, ray.start.y, ray.end.x, ray.end.y,
+                    (rgba){255, 0, 0, 255});
   }
 
   return (Raycast){.hit = 0};

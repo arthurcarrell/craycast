@@ -1,4 +1,5 @@
 #include "editor.h"
+#include "framebuf.h"
 #include "state.h"
 #include "utils.h"
 
@@ -14,23 +15,22 @@ void render_map() {
 
   // for each line, draw one
   int precision = 1000;
+  rgba final_color = (rgba){0};
   for (int i = 0; i < state.line_count; i++) {
     Line line = state.lines[i];
     if (!is_on_line(state.mouse.pos, line, precision)) {
-      SDL_SetRenderDrawColor(state.renderer, line.color.r, line.color.g,
-                             line.color.b, line.color.a);
-
+      final_color = line.color;
       if (line.flags & LINE_FLAG_PORTAL || line.flags & LINE_FLAG_PORTAL_EXIT) {
         if (is_on_line(state.mouse.pos, state.lines[line.portal.output_id],
                        precision)) {
-          SDL_SetRenderDrawColor(state.renderer, 255, 136, 0, 255);
+          final_color = (rgba){255, 136, 0, 255};
         }
       }
     } else {
-      SDL_SetRenderDrawColor(state.renderer, 0, 174, 255, 255);
+      final_color = (rgba){0, 174, 255, 255};
     }
-    SDL_RenderLine(state.renderer, line.start.x, line.start.y, line.end.x,
-                   line.end.y);
+    framebuf_line_s(&framebuf, line.start.x, line.start.y, line.end.x,
+                    line.end.y, final_color);
 
     if (line.flags & LINE_FLAG_PORTAL_EXIT) {
     }
@@ -38,10 +38,9 @@ void render_map() {
 
   // draw a gray line to indicate a line in progress
   if (!editor.even_click) {
-    SDL_SetRenderDrawColor(state.renderer, 119, 118, 123, 128);
-    SDL_RenderLine(state.renderer, editor.last_click_pos.x,
-                   editor.last_click_pos.y, state.mouse.pos.x,
-                   state.mouse.pos.y);
+    framebuf_line_s(&framebuf, editor.last_click_pos.x, editor.last_click_pos.y,
+                    state.mouse.pos.x, state.mouse.pos.y,
+                    (rgba){118, 118, 118, 128});
   }
 }
 

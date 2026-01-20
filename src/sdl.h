@@ -1,7 +1,8 @@
 #ifndef SDL_H
 #define SDL_H
 
-void init_sdl();
-void destroy_sdl();
+#include "framebuf.h"
+void sdl_init();
+void sdl_destroy();
 
 #endif

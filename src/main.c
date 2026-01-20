@@ -14,8 +14,13 @@
 #include <inttypes.h>
 #include <math.h>
 #include <stdbool.h>
+#include <stdint.h>
+#include <stdio.h>
 
-#include "editor.h"  // has all the editor functions
+#include "editor.h" // has all the editor functions
+#include "framebuf.h"
+#include "input.h" // gets input
+#include "line.h"
 #include "raycast.h" // the raycaster
 #include "sdl.h"     // Create and destroy SDL
 #include "state.h"   // 'god struct' and 'god macros'
@@ -23,10 +28,18 @@
 
 // Main functions
 void init() {
+  sdl_init();
+  // framebuffer
+  state.renderer = framebuf_init(&framebuf, &state, (rgba){0, 0, 0, 255});
   // state
   state_init();
   // editor
   editor_init();
+}
+
+void destroy() {
+  sdl_destroy();
+  framebuf_destroy(&framebuf);
 }
 
 void update() {}
@@ -44,27 +57,45 @@ void render_world() {
     state.camera.result[i] = result;
   }
 
+  // store the results in arrays to be handed to the framebuffer
+  int top[WINDOW_WIDTH];
+  int bottom[WINDOW_WIDTH];
+  uint32_t wallcolor[WINDOW_WIDTH];
+
   int tile_size = 20;
   float projection_dist = (WINDOW_WIDTH / 2.0) / tanf(state.camera.fov / 2.0);
   // run through each raycast and draw a line on the screen for it.
   for (int i = 0; i < WINDOW_WIDTH; i++) {
     Raycast result = state.camera.result[i];
-    float height = (tile_size / result.distance) * projection_dist;
+    if (result.hit) {
 
-    int start = WINDOW_HEIGHT / 2.0 - height / 2;
-    int end = WINDOW_HEIGHT / 2.0 + height / 2;
+      float height = (tile_size / result.distance) * projection_dist;
 
-    rgba color = state.lines[result.line_id].color;
+      int start = WINDOW_HEIGHT / 2.0 - height / 2;
+      int end = WINDOW_HEIGHT / 2.0 + height / 2;
 
-    int darkness = clampf(result.distance / 1.5, 255, 0);
+      rgba color = state.lines[result.line_id].color;
 
-    int r = clamp(color.r - darkness, 255, 0);
-    int g = clamp(color.g - darkness, 255, 0);
-    int b = clamp(color.b - darkness, 255, 0);
+      int darkness = clampf(result.distance / 1.5, 255, 0);
 
-    SDL_SetRenderDrawColor(state.renderer, r, g, b, color.a);
-    SDL_RenderLine(state.renderer, i, start, i, end);
+      int r = clamp(color.r - darkness, 255, 0);
+      int g = clamp(color.g - darkness, 255, 0);
+      int b = clamp(color.b - darkness, 255, 0);
+
+      // store the results into an array so that the framebuffer doesnt have a
+      // hard time
+      top[i] = start > 0 ? start : 0;
+      bottom[i] = end >= WINDOW_HEIGHT ? WINDOW_HEIGHT - 1 : end;
+      wallcolor[i] = rgba_to_int((rgba){r, g, b, 255});
+
+    } else {
+      top[i] = -1;
+      bottom[i] = -1;
+      wallcolor[i] = 0;
+    }
   }
+  // give the framebuffer the wall info
+  framebuf_column_optimised(&framebuf, top, bottom, wallcolor, WINDOW_WIDTH);
 }
 
 void render() {
@@ -75,126 +106,8 @@ void render() {
   }
 }
 
-// Ran every time a mouse button is pressed
-void event_mouse_down() {
-  if (editor.map_mode) {
-    if (!editor.portal_mode) {
-      if (!editor.even_click) {
-        Line line = create_render_line(editor.last_click_pos, state.mouse.pos,
-                                       editor.color);
-        line.id = state.line_count;
-        state.lines[state.line_count++] = line;
-      }
-
-      editor.last_click_pos = state.mouse.pos;
-    } else if (editor.map_mode && editor.portal_mode) {
-      for (int i = 0; i < state.line_count; i++) {
-        Line *line = &state.lines[i];
-        if (is_on_line(state.mouse.pos, *line, 1000)) {
-          if (editor.even_click) {
-            editor.last_line_id = line->id;
-            editor.last_click_pos = line->end;
-          } else {
-            // turn the previous line into a portal and the current line into a
-            // portal exit
-            Line *prev = &state.lines[editor.last_line_id];
-
-            if (prev != line) {
-              // check if changing portal target
-              if (prev->flags & LINE_FLAG_PORTAL) {
-                // yes, so strip the portal output flag from the portal output
-                state.lines[prev->portal.output_id].flags &=
-                    ~LINE_FLAG_PORTAL_EXIT;
-
-                // will be overwritten but just in case
-                prev->portal.output_id = 0;
-              }
-              prev->portal.output_id = line->id;
-              prev->flags |= LINE_FLAG_PORTAL;
-
-              line->flags |= LINE_FLAG_PORTAL_EXIT;
-              line->portal.output_id = prev->id;
-            }
-            // disable portal mode
-            editor.portal_mode = 0;
-            editor.last_click_pos = state.mouse.pos;
-          }
-        }
-      }
-    }
-    editor.even_click = !editor.even_click;
-  }
-}
-
-// Keyboard input
-void get_keyboard_input() {
-  // get the key pressed
-  const bool *key_states = SDL_GetKeyboardState(0);
-
-  float movespeed = 0.25 / 2;
-  float look_sensitivity = 0.25;
-  if (key_states[SDL_SCANCODE_LEFT]) {
-    state.camera.rot -= 0.01745329 * state.delta * look_sensitivity;
-  }
-  if (key_states[SDL_SCANCODE_RIGHT]) {
-    state.camera.rot += 0.01745329 * state.delta * look_sensitivity;
-  }
-  if (key_states[SDL_SCANCODE_W]) {
-    state.camera.pos = add_direction(state.camera.pos, state.camera.rot,
-                                     movespeed * state.delta);
-  }
-  if (key_states[SDL_SCANCODE_S]) {
-    state.camera.pos = add_direction(state.camera.pos, state.camera.rot,
-                                     -(movespeed * state.delta));
-  }
-  if (key_states[SDL_SCANCODE_A]) {
-    state.camera.pos =
-        add_direction(state.camera.pos, state.camera.rot + NINETY_DEGINRAD,
-                      -(movespeed * state.delta));
-  }
-  if (key_states[SDL_SCANCODE_D]) {
-    state.camera.pos =
-        add_direction(state.camera.pos, state.camera.rot - NINETY_DEGINRAD,
-                      -(movespeed * state.delta));
-  }
-}
-
-void event_key_down(int key) {
-  if (editor.map_mode) {
-    if (key == SDLK_W) {
-      editor.color = (rgba){255, 255, 255, 255};
-    } else if (key == SDLK_R) {
-      editor.color = (rgba){255, 0, 0, 255};
-    } else if (key == SDLK_Y) {
-      editor.color = (rgba){255, 255, 0, 255};
-    } else if (key == SDLK_G) {
-      editor.color = (rgba){0, 255, 0, 255};
-    } else if (key == SDLK_T) {
-      editor.color = (rgba){0, 255, 255, 255};
-    } else if (key == SDLK_B) {
-      editor.color = (rgba){0, 0, 255, 255};
-    } else if (key == SDLK_P) {
-      editor.color = (rgba){255, 0, 255, 255};
-    } else if (key == SDLK_X) {
-      editor.portal_mode = !editor.portal_mode;
-      editor.even_click = 1;
-    } else if (key == SDLK_F && editor.last_line_id != -1) {
-      if (state.lines[editor.last_line_id].flags & LINE_FLAG_PORTAL_EXIT) {
-        state.lines[editor.last_line_id].portal.flipped =
-            !state.lines[editor.last_line_id].portal.flipped;
-      }
-    }
-  }
-
-  if (key == SDLK_Z) {
-    editor.map_mode = !editor.map_mode;
-    editor.portal_mode = 0;
-  }
-}
-
 // Where the program actually runs, keeps going until quit is true
 int main(int argc, char *argv[]) {
-  init_sdl();
   init();
   SDL_Event event;
   while (!state.quit) {
@@ -217,20 +130,26 @@ int main(int argc, char *argv[]) {
         event_key_down(event.key.key);
       }
     }
-    SDL_SetRenderDrawColor(state.renderer, 0, 0, 0, 255);
-    SDL_RenderClear(state.renderer);
+
+    // Clear the framebuffer
+    framebuf_clear(&framebuf);
+
+    // Do regular stuff
     get_keyboard_input();
     update();
     render();
-    SDL_RenderPresent(state.renderer);
-    SDL_Delay(
-        10); // bandaid fix, I should implement an actual FPS cap but I was
-             // literally hearing whistling while this used 100% of my CPU
+
+    if (state.renderer == NULL) {
+      printf("oh no\n");
+    }
+    // Draw that to the screen
+    framebuf_screen(&framebuf, state.window);
     // frame ends
     state.delta = SDL_GetTicks() - start;
+    printf("FPS: %.2f\n", (1000.0 / state.delta));
   }
 
   // The program has now ended, destroy SDL
-  destroy_sdl();
+  destroy();
   return 0;
 }
