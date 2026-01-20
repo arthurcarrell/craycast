@@ -13,7 +13,6 @@
 #include <float.h>
 #include <inttypes.h>
 #include <math.h>
-#include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
 
@@ -25,6 +24,11 @@
 #include "sdl.h"     // Create and destroy SDL
 #include "state.h"   // 'god struct' and 'god macros'
 #include "utils.h"   // math functions, structs and other misc stuff
+
+// the minimum amount of ms to wait - 16 is around 60 fps
+// this exists as without it this will try and render as much as it can, which
+// ends up using like all of your cpu
+#define MIN_MS 16
 
 // Main functions
 void init() {
@@ -118,6 +122,7 @@ int main(int argc, char *argv[]) {
     // input comes before the events
     SDL_GetMouseState(&state.mouse.pos.x, &state.mouse.pos.y);
 
+    // do events
     while (SDL_PollEvent(&event)) {
       switch (event.type) {
       case SDL_EVENT_QUIT:
@@ -131,22 +136,27 @@ int main(int argc, char *argv[]) {
       }
     }
 
+    // --- MAIN ---
+
     // Clear the framebuffer
     framebuf_clear(&framebuf);
 
-    // Do regular stuff
+    // Do rendering and gameplay
     get_keyboard_input();
     update();
     render();
 
-    if (state.renderer == NULL) {
-      printf("oh no\n");
-    }
-    // Draw that to the screen
+    // Draw the render to the screen
     framebuf_screen(&framebuf, state.window);
+
     // frame ends
     state.delta = SDL_GetTicks() - start;
-    printf("FPS: %.2f\n", (1000.0 / state.delta));
+    // if the time it took to draw that frame is below MIN_MS, then wait that
+    // amount of time
+    if (state.delta < MIN_MS) {
+      SDL_Delay(MIN_MS - state.delta);
+      state.delta = MIN_MS;
+    }
   }
 
   // The program has now ended, destroy SDL
