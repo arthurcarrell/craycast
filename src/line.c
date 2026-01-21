@@ -3,8 +3,10 @@
 
 #include <float.h>
 #include <math.h>
+#include <stdio.h>
+#include <stdlib.h>
 
-vec2f get_line_intersections(const Line *a, const Line *b, int *found) {
+vec2f get_line_intersections(Line *a, Line *b, int *found) {
   // https://en.wikipedia.org/wiki/Line%E2%80%93line_intersection
   float dx1 = a->end.x - a->start.x;
   float dy1 = a->end.y - a->start.y;
@@ -34,22 +36,26 @@ vec2f get_line_intersections(const Line *a, const Line *b, int *found) {
 
 // Line helper functions - unused at the moment
 Line create_simple_line(vec2f start, vec2f end) {
-  return (Line){.start = start, .end = end, .flags = 0};
+  return (Line){.start = start, .end = end};
 }
 
-Line create_line_with_flags(vec2f start, vec2f end, unsigned int flags) {
-  return (Line){.start = start, .end = end, .flags = flags};
+LineSegment create_line_with_flags(vec2f start, vec2f end, unsigned int flags) {
+  return (LineSegment){.start = start, .end = end, .flags = flags};
 }
 
 Line create_render_line(vec2f start, vec2f end, rgba color) {
   return (Line){.start = start, .end = end, .color = color};
 }
 
-Line create_portal_line(vec2f start, vec2f end, int output_id, int flipped) {
-  return (Line){.start = start,
-                .end = end,
-                .portal = {.output_id = output_id, .flipped = flipped},
-                .flags = LINE_FLAG_PORTAL};
+LineSegment create_portal_line(vec2f start, vec2f end, int output_id,
+                               int flipped) {
+  Portal *portal = malloc(sizeof(Portal));
+  if (portal == NULL) {
+    exit(1);
+  }
+  *portal = (Portal){output_id, flipped};
+  return (LineSegment){
+      .start = start, .end = end, .portal = portal, .flags = LINE_FLAG_PORTAL};
 }
 
 int is_on_line(vec2f pos, Line line, float tolerance) {
@@ -90,4 +96,29 @@ float get_line_percent(vec2f pos, Line line) {
   }
 
   return (dxc * dxl + dyc * dyl) / length_sqr;
+}
+
+Line lineseg_line(LineSegment line) {
+  return (Line){line.start, line.end, line.color};
+}
+
+void destroy_linesegs(LineSegment *lines, int *line_count) {
+  int count = 0;
+  int portal_count = 0;
+  for (int i = 0; i < *line_count; i++) {
+    if (lines[i].flags & LINE_FLAG_PORTAL ||
+        lines[i].flags & LINE_FLAG_PORTAL_EXIT) {
+      // free the portal
+      free(lines[i].portal);
+      lines[i].portal = NULL;
+      portal_count++;
+    }
+    count++;
+  }
+
+  free(lines);
+  *line_count = 0;
+
+  printf("Destroyed %d line segments and destroyed %d portals\n", count,
+         portal_count);
 }

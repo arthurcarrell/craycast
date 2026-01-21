@@ -1,7 +1,7 @@
 CC = gcc
-CFLAGS = -Wall -Wextra -g -Isrc
+CFLAGS = -Wall -Wextra -O0 -Isrc -fsanitize=address,undefined 
 SDL_FLAGS = -lSDL3
-LD_FLAGS = -lm
+LD_FLAGS = -lm -fsanitize=address -fsanitize=undefined -g
 SRC = $(wildcard src/*.c)
 OBJ = $(patsubst src/%.c,obj/%.o,$(SRC))
 TARGET = program

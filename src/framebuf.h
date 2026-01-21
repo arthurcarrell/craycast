@@ -19,7 +19,7 @@ typedef struct {
 extern Framebuffer framebuf;
 
 // --- Init & Destroy ---
-SDL_Renderer *framebuf_init(Framebuffer *fb, State *state, rgba color);
+SDL_Renderer *framebuf_init(Framebuffer *fb, SDL_Window *window, rgba color);
 void framebuf_destroy(Framebuffer *fb);
 
 // --- Draw functions ---

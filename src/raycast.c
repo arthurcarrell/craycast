@@ -1,10 +1,13 @@
 #include "raycast.h"
 #include "editor.h"
 #include "framebuf.h"
+#include "line.h"
 #include "state.h"
 #include "utils.h"
+#include <stdio.h>
 
-Raycast raycast(vec2f pos, float rot, float distance) {
+// Only raycast for a specific sector, faster as less lines have to be checked
+Raycast raycast_sec(Sector *sec, vec2f pos, float rot, float distance) {
   // create a line
   vec2f end = add_direction(pos, rot, distance);
   Line ray = (Line){pos, end, {255, 0, 0, 255}};
@@ -15,36 +18,39 @@ Raycast raycast(vec2f pos, float rot, float distance) {
   int success = 0;
 
   // get each line and get the closest one that intersects with the ray
-  for (int i = 0; i < state.line_count; i++) {
+  for (int i = 0; i < sec->line_count; i++) {
     // check if lines intersect
     int found;
-    vec2f result = get_line_intersections(&ray, &state.lines[i], &found);
+    Line line2 = lineseg_line(sec->lines[i]);
+    vec2f result = get_line_intersections(&ray, &line2, &found);
     if (found) {
       float current_distance = get_distance(pos, result);
       if (current_distance < closest) {
         closest_vector = result;
         closest = current_distance;
-        line_id = state.lines[i].id;
+        line_id = sec->lines[i].id;
         success = 1;
       }
     }
   }
 
   // THINKING WITH PORTALS
-  if (success && state.lines[line_id].flags & LINE_FLAG_PORTAL) {
+  if (success && sec->lines[line_id].flags & LINE_FLAG_PORTAL) {
     // this is a portal, so raycast from the line on the otherside
-    Line line = state.lines[line_id];
-    Line output = state.lines[line.portal.output_id];
+    LineSegment line = sec->lines[line_id];
+    LineSegment output =
+        state.sectors[line.sector_id].lines[line.portal->output_id];
 
     // check that the other portal has the PORTAL_EXIT flag, if they dont, quit.
     if (!(output.flags & LINE_FLAG_PORTAL_EXIT)) {
       printf("Error! Line %d is used in a portal, but is not marked as a "
              "portal exit.\n",
              output.id);
+      exit(1);
     }
 
     // get the percentage of how far across the line the point is
-    float percent = get_line_percent(closest_vector, line);
+    float percent = get_line_percent(closest_vector, lineseg_line(line));
 
     // exit and raypos is black magic I looked up
     vec2f exit = {output.end.x - output.start.x, output.end.y - output.start.y};
@@ -55,7 +61,7 @@ Raycast raycast(vec2f pos, float rot, float distance) {
     float relrot = rot - get_direction(line.start, line.end);
 
     // check if flipped - if yes, flip the relative rotation
-    if (output.portal.flipped) {
+    if (output.portal->flipped) {
       relrot = -relrot;
     }
     // calculate the final angle for the exit line
@@ -72,7 +78,8 @@ Raycast raycast(vec2f pos, float rot, float distance) {
     raypos = add_direction(raypos, rayrot, 1);
 
     // shoot a new ray and add the distance so that it is not reset on return
-    Raycast newray = raycast(raypos, rayrot, distance - closest);
+    Raycast newray = raycast_sec(&state.sectors[output.sector_id], raypos,
+                                 rayrot, distance - closest);
 
     if (newray.hit) {
       newray.distance += closest;
@@ -85,7 +92,7 @@ Raycast raycast(vec2f pos, float rot, float distance) {
       framebuf_line_s(&framebuf, pos.x, pos.y, closest_vector.x,
                       closest_vector.y, (rgba){0, 255, 0, 255});
     }
-    return (Raycast){1, closest_vector, closest, line_id};
+    return (Raycast){1, closest_vector, closest, line_id, sec->id};
   }
   if (editor.map_mode) {
     // draw a red line to indicate failure
@@ -94,4 +101,10 @@ Raycast raycast(vec2f pos, float rot, float distance) {
   }
 
   return (Raycast){.hit = 0};
+}
+
+// Raycast, getting the first LineSegment hit on any sector
+Raycast raycast(vec2f pos, float rot, float distance) {
+  // uh this is broke
+  return raycast_sec(&state.sectors[0], pos, rot, distance);
 }

@@ -10,6 +10,8 @@ typedef struct {
   int portal_mode;
   int map_mode;
   int last_line_id;
+  int last_sector_id;
+  int current_sector;
 } Editor;
 
 extern Editor editor;

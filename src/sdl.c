@@ -6,7 +6,7 @@
 #include <stdlib.h>
 
 void sdl_init() {
-  state.quit = false;
+  state.quit = 0;
 
   if (!SDL_Init(SDL_INIT_VIDEO)) {
     // something broke

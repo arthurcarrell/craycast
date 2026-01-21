@@ -13,13 +13,22 @@ typedef struct {
   vec2f start;
   vec2f end;
   rgba color;
-  int id;
-  unsigned int flags;
-  struct {
-    int output_id;
-    int flipped;
-  } portal;
 } Line;
+
+typedef struct {
+  int output_id;
+  int flipped;
+} Portal;
+
+typedef struct {
+  vec2f start;
+  vec2f end;
+  rgba color;
+  int id;
+  int sector_id;
+  unsigned int flags;
+  Portal *portal;
+} LineSegment;
 
 // --- Line Intersections (the whole project runs on this) ---
 
@@ -28,14 +37,16 @@ typedef struct {
 // The value returned is the point at which the two lines touch.
 // If they dont, the point is returned as 0,0 - but found should be used to
 // check if they do.
-vec2f get_line_intersections(const Line *line1, const Line *line2, int *found);
+vec2f get_line_intersections(Line *line1, Line *line2, int *found);
 
 //  --- Line functions ---
 Line create_simple_line(vec2f start, vec2f end);
-Line create_line_with_flags(vec2f start, vec2f end, unsigned int flags);
+LineSegment create_line_with_flags(vec2f start, vec2f end, unsigned int flags);
 Line create_render_line(vec2f start, vec2f end, rgba color);
-Line create_portal_line(vec2f start, vec2f end, int output_id, int flipped);
+LineSegment create_portal_line(vec2f start, vec2f end, int output_id,
+                               int flipped);
 
+Line lineseg_line(LineSegment line);
 // Checks if a point is on a line. Returns 0 for no and 1 for yes.
 // tolerance is how far the point can be from the line for it to still count
 // as being on the line. For most uses, tolerance should be 0 but for uses like
@@ -46,5 +57,8 @@ int is_on_line(vec2f pos, Line line, float tolerance);
 // Returns a decimal percentage on how far a position is on the line.
 // 0 is the start and 1 is the end.
 float get_line_percent(vec2f pos, Line line);
+
+// Destroys all line segments and sets line count to 0.
+void destroy_linesegs(LineSegment *lines, int *line_count);
 
 #endif

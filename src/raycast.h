@@ -1,6 +1,7 @@
 #ifndef RAYCAST_H
 #define RAYCAST_H
 
+#include "sector.h"
 #include "utils.h"
 
 // The result of a raycast:
@@ -14,8 +15,10 @@ typedef struct {
   vec2f pos;
   float distance;
   int line_id;
+  int sector_id;
 } Raycast;
 
+Raycast raycast_sec(Sector *sector, vec2f pos, float rot, float distance);
 Raycast raycast(vec2f pos, float rot, float distance);
 
 #endif

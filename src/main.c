@@ -7,6 +7,7 @@
 #include <SDL3/SDL_mouse.h>
 #include <SDL3/SDL_render.h>
 #include <SDL3/SDL_scancode.h>
+#include <SDL3/SDL_stdinc.h>
 #include <SDL3/SDL_timer.h>
 #include <SDL3/SDL_video.h>
 #include <assert.h>
@@ -16,91 +17,46 @@
 #include <stdint.h>
 #include <stdio.h>
 
-#include "editor.h" // has all the editor functions
-#include "framebuf.h"
-#include "input.h" // gets input
-#include "line.h"
-#include "raycast.h" // the raycaster
-#include "sdl.h"     // Create and destroy SDL
-#include "state.h"   // 'god struct' and 'god macros'
-#include "utils.h"   // math functions, structs and other misc stuff
+#include "editor.h"   // has all the editor functions
+#include "framebuf.h" // the framebuffer
+#include "input.h"    // gets input
+#include "sdl.h"      // Create and destroy SDL
+#include "sector.h"
+#include "state.h" // 'god struct' and 'god macros'
+#include "utils.h" // math functions, structs and other misc stuff
+#include "world.h"
+
+// TODO: either stop doing more optimisations - 90-100 fps is good when printing
+// text every frame and also drawing a complete frame at 1920x1080 OR attempt to
+// scale up the surface to make the game slightly lower res (more 90s) but a lot
+// faster
 
 // the minimum amount of ms to wait - 16 is around 60 fps
 // this exists as without it this will try and render as much as it can, which
 // ends up using like all of your cpu
 #define MIN_MS 16
 
+// Will only compute every other column in world
+
 // Main functions
 void init() {
+  state_init();
   sdl_init();
   // framebuffer
-  state.renderer = framebuf_init(&framebuf, &state, (rgba){0, 0, 0, 255});
-  // state
-  state_init();
+  state.renderer = framebuf_init(&framebuf, state.window, (rgba){0, 0, 0, 255});
   // editor
   editor_init();
 }
 
 void destroy() {
+  printf("Cleaning up\n");
   sdl_destroy();
   framebuf_destroy(&framebuf);
+  state_destroy();
+  printf("Clean up complete\n");
 }
 
 void update() {}
-
-void render_world() {
-  // do a raycast for each pixel on the screen
-  for (int i = 0; i < WINDOW_WIDTH; i++) {
-    float rot = state.camera.rot - state.camera.fov / 2.0 +
-                (i / (float)WINDOW_WIDTH) * state.camera.fov;
-    Raycast result = raycast(state.camera.pos, rot, state.camera.dist);
-    if (result.hit) {
-      // correct distance to remove the fisheye
-      result.distance = result.distance * cosf(rot - state.camera.rot);
-    }
-    state.camera.result[i] = result;
-  }
-
-  // store the results in arrays to be handed to the framebuffer
-  int top[WINDOW_WIDTH];
-  int bottom[WINDOW_WIDTH];
-  uint32_t wallcolor[WINDOW_WIDTH];
-
-  int tile_size = 20;
-  float projection_dist = (WINDOW_WIDTH / 2.0) / tanf(state.camera.fov / 2.0);
-  // run through each raycast and draw a line on the screen for it.
-  for (int i = 0; i < WINDOW_WIDTH; i++) {
-    Raycast result = state.camera.result[i];
-    if (result.hit) {
-
-      float height = (tile_size / result.distance) * projection_dist;
-
-      int start = WINDOW_HEIGHT / 2.0 - height / 2;
-      int end = WINDOW_HEIGHT / 2.0 + height / 2;
-
-      rgba color = state.lines[result.line_id].color;
-
-      int darkness = clampf(result.distance / 1.5, 255, 0);
-
-      int r = clamp(color.r - darkness, 255, 0);
-      int g = clamp(color.g - darkness, 255, 0);
-      int b = clamp(color.b - darkness, 255, 0);
-
-      // store the results into an array so that the framebuffer doesnt have a
-      // hard time
-      top[i] = start > 0 ? start : 0;
-      bottom[i] = end >= WINDOW_HEIGHT ? WINDOW_HEIGHT - 1 : end;
-      wallcolor[i] = rgba_to_int((rgba){r, g, b, 255});
-
-    } else {
-      top[i] = -1;
-      bottom[i] = -1;
-      wallcolor[i] = 0;
-    }
-  }
-  // give the framebuffer the wall info
-  framebuf_column_optimised(&framebuf, top, bottom, wallcolor, WINDOW_WIDTH);
-}
 
 void render() {
   if (editor.map_mode) {
@@ -113,7 +69,6 @@ void render() {
 // Where the program actually runs, keeps going until quit is true
 int main(int argc, char *argv[]) {
   init();
-  SDL_Event event;
   while (!state.quit) {
 
     // frame begins
@@ -121,8 +76,9 @@ int main(int argc, char *argv[]) {
 
     // input comes before the events
     SDL_GetMouseState(&state.mouse.pos.x, &state.mouse.pos.y);
-
     // do events
+    SDL_Event event;
+    SDL_zero(event);
     while (SDL_PollEvent(&event)) {
       switch (event.type) {
       case SDL_EVENT_QUIT:
@@ -133,11 +89,18 @@ int main(int argc, char *argv[]) {
         break;
       case SDL_EVENT_KEY_DOWN:
         event_key_down(event.key.key);
+        break;
       }
     }
-
     // --- MAIN ---
-
+    // Im actually very dumb - all of the memory issues that I've been having is
+    // because I havent deleted the object files. This means that one file
+    // thinks that something in state is at location X, when its really at
+    // location Y
+    if (state.mouse.canary != 0xDECAFBAD) {
+      fprintf(stderr, "Mouse canary got corrupted! Something's setting memory "
+                      "where it shouldnt\n");
+    }
     // Clear the framebuffer
     framebuf_clear(&framebuf);
 
@@ -157,6 +120,8 @@ int main(int argc, char *argv[]) {
       SDL_Delay(MIN_MS - state.delta);
       state.delta = MIN_MS;
     }
+
+    // printf("fps: %.2f \n", (1000.0 / state.delta));
   }
 
   // The program has now ended, destroy SDL

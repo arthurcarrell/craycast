@@ -3,6 +3,7 @@
 
 #include "line.h"
 #include "raycast.h"
+#include "sector.h"
 #include "utils.h"
 #include <SDL3/SDL.h>
 
@@ -10,12 +11,21 @@
 #define WINDOW_HEIGHT 1080
 
 typedef struct {
+  struct {
+    vec2f pos;
+    uint32_t canary;
+  } mouse;
+
   SDL_Window *window;
   SDL_Renderer *renderer;
   SDL_Texture *texture;
-  Line lines[100]; // will the program segfault after 100 lines are made? yes.
-                   // this is a prototype so thats fine for now
+  LineSegment *lines;
+  Sector *sectors;
+  int sector_count;
   int line_count;
+
+  int quit;
+  float delta;
 
   struct {
     vec2f pos;
@@ -25,17 +35,11 @@ typedef struct {
     Raycast result[WINDOW_WIDTH];
   } camera;
 
-  struct {
-    vec2f pos;
-  } mouse;
-
-  bool quit;
-  float delta;
-
 } State;
 
 extern State state;
 
 void state_init();
+void state_destroy();
 
 #endif
