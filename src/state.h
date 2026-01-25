@@ -1,6 +1,7 @@
 #ifndef STATE_H
 #define STATE_H
 
+#include "actor.h"
 #include "line.h"
 #include "raycast.h"
 #include "sector.h"
@@ -21,6 +22,7 @@ typedef struct {
   SDL_Texture *texture;
   LineSegment *lines;
   Sector *sectors;
+  Actor player;
   int sector_count;
   int line_count;
 

@@ -1,4 +1,5 @@
 #include "state.h"
+#include "actor.h"
 #include "line.h"
 #include "sector.h"
 #include "utils.h"
@@ -30,6 +31,8 @@ void state_init() {
   state.mouse.canary = 0xDECAFBAD; // used to check if data has been corrupted,
                                    // I was having a problem
   state.delta = 0;
+
+  state.player = (Actor){state.camera.pos, 0};
 
   // --- Sectors ---
   state.sectors = calloc(100, sizeof(Sector));

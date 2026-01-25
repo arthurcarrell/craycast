@@ -38,8 +38,8 @@ Raycast raycast_sec(Sector *sec, vec2f pos, float rot, float distance) {
   if (success && sec->lines[line_id].flags & LINE_FLAG_PORTAL) {
     // this is a portal, so raycast from the line on the otherside
     LineSegment line = sec->lines[line_id];
-    LineSegment output =
-        state.sectors[line.sector_id].lines[line.portal->output_id];
+    LineSegment output = state.sectors[line.portal->output_sector_id]
+                             .lines[line.portal->output_id];
 
     // check that the other portal has the PORTAL_EXIT flag, if they dont, quit.
     if (!(output.flags & LINE_FLAG_PORTAL_EXIT)) {
@@ -61,7 +61,7 @@ Raycast raycast_sec(Sector *sec, vec2f pos, float rot, float distance) {
     float relrot = rot - get_direction(line.start, line.end);
 
     // check if flipped - if yes, flip the relative rotation
-    if (output.portal->flipped) {
+    if (!output.portal->flipped) {
       relrot = -relrot;
     }
     // calculate the final angle for the exit line
@@ -75,7 +75,7 @@ Raycast raycast_sec(Sector *sec, vec2f pos, float rot, float distance) {
     }
 
     // move the position slightly forward so that it doesnt collide with itself
-    raypos = add_direction(raypos, rayrot, 1);
+    raypos = add_direction(raypos, rayrot, 0.0001);
 
     // shoot a new ray and add the distance so that it is not reset on return
     Raycast newray = raycast_sec(&state.sectors[output.sector_id], raypos,

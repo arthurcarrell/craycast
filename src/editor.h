@@ -18,5 +18,6 @@ extern Editor editor;
 
 void render_map();
 void editor_init();
+void editor_on_click();
 
 #endif // !TEXTURES_H

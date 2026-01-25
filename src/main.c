@@ -17,6 +17,7 @@
 #include <stdint.h>
 #include <stdio.h>
 
+#include "actor.h"
 #include "editor.h"   // has all the editor functions
 #include "framebuf.h" // the framebuffer
 #include "input.h"    // gets input
@@ -56,7 +57,7 @@ void destroy() {
   printf("Clean up complete\n");
 }
 
-void update() {}
+void update() { state.camera.pos = state.player.pos; }
 
 void render() {
   if (editor.map_mode) {

@@ -83,6 +83,17 @@ int is_on_line(vec2f pos, Line line, float tolerance) {
   }
 }
 
+LineSegment *get_line_at_point(vec2f point, LineSegment *lines, int count,
+                               float tolerance) {
+  for (int i = 0; i < count; i++) {
+    if (is_on_line(point, lineseg_line(lines[i]), tolerance)) {
+      return &lines[i];
+    }
+  }
+
+  return NULL;
+}
+
 float get_line_percent(vec2f pos, Line line) {
   float dxc = pos.x - line.start.x;
   float dyc = pos.y - line.start.y;

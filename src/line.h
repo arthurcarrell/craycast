@@ -17,6 +17,7 @@ typedef struct {
 
 typedef struct {
   int output_id;
+  int output_sector_id;
   int flipped;
 } Portal;
 
@@ -53,6 +54,11 @@ Line lineseg_line(LineSegment line);
 // checking if the mouse is touching the line, tolerance should be high to allow
 // easier interaction.
 int is_on_line(vec2f pos, Line line, float tolerance);
+
+// Gets the Line that a point is touching, if the point is not touching a line,
+// then return NULL
+LineSegment *get_line_at_point(vec2f point, LineSegment *lines, int line_count,
+                               float tolerance);
 
 // Returns a decimal percentage on how far a position is on the line.
 // 0 is the start and 1 is the end.
