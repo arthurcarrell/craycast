@@ -50,9 +50,9 @@ SDL_Renderer *framebuf_init(Framebuffer *fb, SDL_Window *window, rgba color) {
     exit(1);
   }
 
-  fb->format = SDL_GetPixelFormatDetails(
-      fb->screen->format); // clang is crying because ive set a non constant
-                           // value to a constant value - cry about it clang
+  // HACK: Clang is not happy with me about this but it doesnt seem to cause any
+  // issues
+  fb->format = SDL_GetPixelFormatDetails(fb->screen->format);
 
   // create  a renderer to go with it
   SDL_Renderer *renderer = SDL_CreateSoftwareRenderer(fb->screen);
@@ -181,9 +181,7 @@ void framebuf_line_diag(Framebuffer *fb, int x0, int x1, int y0, int y1,
 
   uint32_t col = rgba_to_int(color);
 
-  // yes its a while true break, this is cursed
-  // indeed it is - this was the cause of a really bad error that took me a few
-  // hours to fix
+  // HACK: Use of a while true break :(
   while (1) {
     if (x0 >= 0 && x0 < WINDOW_WIDTH && y0 >= 0 && y0 < WINDOW_HEIGHT) {
       fb->pixels[y0 * WINDOW_WIDTH + x0] = col;

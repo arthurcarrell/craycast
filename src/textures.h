@@ -1,6 +1,7 @@
 #ifndef TEXTURES_H
 #define TEXTURES_H
 #include <SDL3/SDL_render.h>
+#include <SDL3/SDL_surface.h>
 
 #define TEXTURE_FIT_NONE 0    // do nothing
 #define TEXTURE_FIT_STRETCH 1 // stretch the texture to fit
@@ -8,7 +9,7 @@
 #define TEXTURE_FIT_FILL 3    // stretch the texture but keep the ratio
 
 typedef struct {
-  SDL_Texture *texture;
+  SDL_Surface *texture;
   int fit;
 } Texture;
 

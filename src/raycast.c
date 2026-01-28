@@ -4,10 +4,12 @@
 #include "line.h"
 #include "state.h"
 #include "utils.h"
+#include <math.h>
 #include <stdio.h>
 
 // Only raycast for a specific sector, faster as less lines have to be checked
-Raycast raycast_sec(Sector *sec, vec2f pos, float rot, float distance) {
+Raycast raycast_sec_with_skip(Sector *sec, vec2f pos, float rot, float distance,
+                              float skip) {
   // create a line
   vec2f end = add_direction(pos, rot, distance);
   Line ray = (Line){pos, end, {255, 0, 0, 255}};
@@ -49,23 +51,26 @@ Raycast raycast_sec(Sector *sec, vec2f pos, float rot, float distance) {
       exit(1);
     }
 
+    float anglein = get_direction(line.start, line.end);
+    float angleout = get_direction(output.start, output.end);
+
+    // calucate the relative angle of the ray to the portal
+    float diff = angleout - anglein + M_PI;
+    float offset = (output.portal->flipped) ? 0.0 : M_PI;
+
     // get the percentage of how far across the line the point is
     float percent = get_line_percent(closest_vector, lineseg_line(line));
+    percent = (output.portal->flipped) ? (1.0 - percent) : percent;
+
+    float rayrot = rot + diff + offset;
 
     // exit and raypos is black magic I looked up
     vec2f exit = {output.end.x - output.start.x, output.end.y - output.start.y};
     vec2f raypos = {output.start.x + exit.x * percent,
                     output.start.y + exit.y * percent};
 
-    // get the relative angle of the ray from the portal
-    float relrot = rot - get_direction(line.start, line.end);
-
-    // check if flipped - if yes, flip the relative rotation
-    if (!output.portal->flipped) {
-      relrot = -relrot;
-    }
-    // calculate the final angle for the exit line
-    float rayrot = get_direction(output.start, output.end) + relrot;
+    // normalise the angle
+    rayrot = fmodf(rayrot, M_PI * 2);
 
     // if in map mode draw a purple line to indicate that the POV is going
     // through a portal
@@ -75,7 +80,7 @@ Raycast raycast_sec(Sector *sec, vec2f pos, float rot, float distance) {
     }
 
     // move the position slightly forward so that it doesnt collide with itself
-    raypos = add_direction(raypos, rayrot, 0.0001);
+    raypos = add_direction(raypos, rayrot, skip);
 
     // shoot a new ray and add the distance so that it is not reset on return
     Raycast newray = raycast_sec(&state.sectors[output.sector_id], raypos,
@@ -92,7 +97,7 @@ Raycast raycast_sec(Sector *sec, vec2f pos, float rot, float distance) {
       framebuf_line_s(&framebuf, pos.x, pos.y, closest_vector.x,
                       closest_vector.y, (rgba){0, 255, 0, 255});
     }
-    return (Raycast){1, closest_vector, closest, line_id, sec->id};
+    return (Raycast){1, closest_vector, closest, rot, line_id, sec->id};
   }
   if (editor.map_mode) {
     // draw a red line to indicate failure
@@ -100,7 +105,11 @@ Raycast raycast_sec(Sector *sec, vec2f pos, float rot, float distance) {
                     (rgba){255, 0, 0, 255});
   }
 
-  return (Raycast){.hit = 0};
+  return (Raycast){.hit = 0, {ray.end.x, ray.end.y}, closest, rot, -1, -1};
+}
+
+Raycast raycast_sec(Sector *sector, vec2f pos, float rot, float distance) {
+  return raycast_sec_with_skip(sector, pos, rot, distance, 0.1);
 }
 
 // Raycast, getting the first LineSegment hit on any sector

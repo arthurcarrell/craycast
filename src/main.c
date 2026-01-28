@@ -37,8 +37,6 @@
 // ends up using like all of your cpu
 #define MIN_MS 16
 
-// Will only compute every other column in world
-
 // Main functions
 void init() {
   state_init();
@@ -57,7 +55,10 @@ void destroy() {
   printf("Clean up complete\n");
 }
 
-void update() { state.camera.pos = state.player.pos; }
+void update() {
+  state.camera.pos = state.player.pos;
+  state.camera.rot = state.player.rot;
+}
 
 void render() {
   if (editor.map_mode) {

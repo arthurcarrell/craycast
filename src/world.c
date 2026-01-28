@@ -31,6 +31,9 @@ void render_world() {
 
   int ceil_top[WINDOW_WIDTH];
   int ceil_bottom[WINDOW_WIDTH];
+
+  int floor_top[WINDOW_WIDTH];
+  int floor_bottom[WINDOW_WIDTH];
   int floor[WINDOW_WIDTH];
   uint32_t ceilcolor[WINDOW_WIDTH];
   uint32_t floorcolor[WINDOW_WIDTH];
@@ -63,21 +66,54 @@ void render_world() {
       bottom[i] = end >= WINDOW_HEIGHT ? WINDOW_HEIGHT - 1 : end;
       wallcolor[i] = rgba_to_int((rgba){r, g, b, 255});
 
-      // floor and ceiling
-      ceilcolor[i] = rgba_to_int(currsec->ceil_color);
-      floorcolor[i] = rgba_to_int(currsec->floor_color);
+      // Ceiling
+
+      int cr = (currsec->ceil_color.r - darkness) > 0
+                   ? (currsec->ceil_color.r - darkness)
+                   : 0;
+      int cg = (currsec->ceil_color.g - darkness) > 0
+                   ? (currsec->ceil_color.g - darkness)
+                   : 0;
+      int cb = (currsec->ceil_color.b - darkness) > 0
+                   ? (currsec->ceil_color.b - darkness)
+                   : 0;
+
+      ceilcolor[i] = rgba_to_int((rgba){cr, cg, cb});
+
+      // Floor
+
+      int fr = (currsec->floor_color.r - darkness) > 0
+                   ? (currsec->floor_color.r - darkness)
+                   : 0;
+      int fg = (currsec->floor_color.g - darkness) > 0
+                   ? (currsec->floor_color.g - darkness)
+                   : 0;
+      int fb = (currsec->floor_color.b - darkness) > 0
+                   ? (currsec->floor_color.b - darkness)
+                   : 0;
+
+      floorcolor[i] = rgba_to_int((rgba){fr, fg, fb});
+
+      // height
       ceil_top[i] = 0;
       ceil_bottom[i] = top[i] - 1;
+
+      floor_bottom[i] = WINDOW_HEIGHT - 1;
+      floor_top[i] = bottom[i] - 1;
     } else {
       top[i] = -1;
       bottom[i] = -1;
       wallcolor[i] = 0;
       ceil_top[i] = -1;
       ceil_bottom[i] = -1;
+      floor_top[i] = -1;
+      floor_bottom[i] = -1;
     }
   }
   // give the framebuffer the wall info
   framebuf_column_optimised(&framebuf, top, bottom, wallcolor, WINDOW_WIDTH);
   framebuf_column_optimised(&framebuf, ceil_top, ceil_bottom, ceilcolor,
+                            WINDOW_WIDTH);
+  framebuf_column_optimised(&framebuf, floor_top, floor_bottom, floorcolor,
                             WINDOW_WIDTH);
 }

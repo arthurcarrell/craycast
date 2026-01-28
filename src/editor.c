@@ -47,6 +47,11 @@ void render_map() {
   }
 
   // draw a gray line to indicate a line in progress
+  if (editor.portal_mode && !editor.even_click) {
+    framebuf_line_s(&framebuf, editor.last_click_pos.x, editor.last_click_pos.y,
+                    state.mouse.pos.x, state.mouse.pos.y,
+                    (rgba){128, 128, 128, 128});
+  }
 }
 
 void editor_on_click() {
@@ -64,8 +69,7 @@ void editor_on_click() {
     }
 
     // create a new sector
-    Sector *current =
-        sector_create(5, (rgba){0, 0, 0, 255}, 20, (rgba){0, 0, 0, 255}, 0, 0);
+    Sector *current = sector_create(5, editor.color, 20, editor.color, 0, 0);
 
     int size = 50;
     current->lines[0] = (LineSegment){
@@ -114,6 +118,7 @@ void editor_on_click() {
         if (is_on_line(state.mouse.pos, lineseg_line(*line), 1000)) {
           if (editor.even_click) {
             editor.last_line_id = line->id;
+            editor.last_sector_id = line->sector_id;
             editor.last_click_pos = line->end;
           } else {
             // turn the previous line into a portal and the current line into
@@ -122,12 +127,6 @@ void editor_on_click() {
                                      .lines[editor.last_line_id];
 
             if (prev != line) {
-              // check if changing portal target
-              if (prev->flags & LINE_FLAG_PORTAL) {
-                // yes, so strip the portal output flag from the portal output
-                sec->lines[prev->portal->output_id].flags &=
-                    ~LINE_FLAG_PORTAL_EXIT;
-              }
 
               if (prev->portal == NULL) {
                 Portal *portal = malloc(sizeof(Portal));
@@ -135,6 +134,7 @@ void editor_on_click() {
                 prev->portal = portal;
               } else {
                 prev->portal->output_id = line->id;
+                prev->portal->output_sector_id = line->sector_id;
               }
 
               prev->flags |= LINE_FLAG_PORTAL;
@@ -142,10 +142,11 @@ void editor_on_click() {
               if (line->portal == NULL) {
                 // create a portal struct
                 Portal *portal = malloc(sizeof(Portal));
-                *portal = (Portal){prev->portal->output_id, line->sector_id, 0};
+                *portal = (Portal){prev->id, prev->sector_id, 0};
                 line->portal = portal;
               } else {
-                line->portal->output_id = prev->portal->output_id;
+                line->portal->output_id = prev->id;
+                line->portal->output_sector_id = prev->sector_id;
               }
 
               line->flags |= LINE_FLAG_PORTAL_EXIT;

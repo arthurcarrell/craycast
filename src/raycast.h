@@ -14,11 +14,14 @@ typedef struct {
   int hit;
   vec2f pos;
   float distance;
+  float rot;
   int line_id;
   int sector_id;
 } Raycast;
 
 Raycast raycast_sec(Sector *sector, vec2f pos, float rot, float distance);
+Raycast raycast_sec_with_skip(Sector *sector, vec2f pos, float rot,
+                              float distance, float skip);
 Raycast raycast(vec2f pos, float rot, float distance);
 
 #endif

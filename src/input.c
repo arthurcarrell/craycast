@@ -25,24 +25,24 @@ void get_keyboard_input() {
   float movespeed = 0.25 / 2;
   float look_sensitivity = 0.25;
   if (key_states[SDL_SCANCODE_LEFT]) {
-    state.camera.rot -= 0.01745329 * state.delta * look_sensitivity;
+    state.player.rot -= 0.01745329 * state.delta * look_sensitivity;
   }
   if (key_states[SDL_SCANCODE_RIGHT]) {
-    state.camera.rot += 0.01745329 * state.delta * look_sensitivity;
+    state.player.rot += 0.01745329 * state.delta * look_sensitivity;
   }
   if (key_states[SDL_SCANCODE_W]) {
-    actor_move(&state.player, state.camera.rot, movespeed * state.delta);
+    actor_move(&state.player, movespeed * state.delta, state.player.rot);
   }
   if (key_states[SDL_SCANCODE_S]) {
-    actor_move(&state.player, state.camera.rot, -(movespeed * state.delta));
+    actor_move(&state.player, -(movespeed * state.delta), state.player.rot);
   }
   if (key_states[SDL_SCANCODE_A]) {
-    actor_move(&state.player, state.camera.rot + NINETY_DEGINRAD,
-               -(movespeed * state.delta));
+    actor_move(&state.player, -(movespeed * state.delta),
+               state.player.rot + NINETY_DEGINRAD);
   }
   if (key_states[SDL_SCANCODE_D]) {
-    actor_move(&state.player, state.camera.rot - NINETY_DEGINRAD,
-               -(movespeed * state.delta));
+    actor_move(&state.player, -(movespeed * state.delta),
+               state.player.rot - NINETY_DEGINRAD);
   }
 }
 

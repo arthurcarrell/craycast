@@ -29,3 +29,13 @@ void sdl_destroy() {
   SDL_DestroyWindow(state.window);
   SDL_Quit();
 }
+
+// Comment annotations test - these are all highlighted in neovim
+// BUG: this broke
+// FIXME: this needs fixing
+// HACK: this is bad
+// WARN: This could break
+// NOTE: blah blah blah
+// TODO: fix this
+// PERF: make this run faster
+// TEST: This is a test

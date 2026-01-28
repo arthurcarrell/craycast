@@ -4,9 +4,10 @@
 #include "utils.h"
 typedef struct {
   vec2f pos;
+  float rot;
   int height;
 
 } Actor;
 
-int actor_move(Actor *actor, float direction, float amount);
+int actor_move(Actor *actor, float amount, float direction);
 #endif
