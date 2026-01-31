@@ -13,7 +13,6 @@
 #include <assert.h>
 #include <float.h>
 #include <inttypes.h>
-#include <math.h>
 #include <stdint.h>
 #include <stdio.h>
 
@@ -21,7 +20,9 @@
 #include "editor.h"   // has all the editor functions
 #include "framebuf.h" // the framebuffer
 #include "input.h"    // gets input
-#include "sdl.h"      // Create and destroy SDL
+#include "map_parser/parse.h"
+#include "map_parser/save.h"
+#include "sdl.h" // Create and destroy SDL
 #include "sector.h"
 #include "state.h" // 'god struct' and 'god macros'
 #include "utils.h" // math functions, structs and other misc stuff
@@ -45,10 +46,12 @@ void init() {
   state.renderer = framebuf_init(&framebuf, state.window, (rgba){0, 0, 0, 255});
   // editor
   editor_init();
+  load_map("untitled");
 }
 
 void destroy() {
   printf("Cleaning up\n");
+  save_map("untitled", state.sectors, state.sector_count);
   sdl_destroy();
   framebuf_destroy(&framebuf);
   state_destroy();
