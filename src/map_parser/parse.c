@@ -1,4 +1,5 @@
 #include "../state.h"
+#include <SDL3/SDL_events.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -14,8 +15,43 @@ void create_sector(char **tokens) {
 
   int light = atoi(tokens[11]);
 
-  state.sectors[id] =
-      (Sector){id, NULL, line_count, 0, 20, floor_color, ceil_color, light};
+  state.sectors[id] = (Sector){id,         calloc(100, sizeof(LineSegment)),
+                               line_count, 0,
+                               20,         floor_color,
+                               ceil_color, light};
+  state.sector_count++;
+  printf("created sector: id: %d line_count: %d light: %d\n", id, line_count,
+         light);
+}
+
+void create_line(char **tokens) {
+  int id = atoi(tokens[1]);
+  int sector_id = atoi(tokens[2]);
+  vec2f start = {atof(tokens[3]), atof(tokens[4])};
+  vec2f end = {atof(tokens[5]), atof(tokens[6])};
+  rgba color = {atoi(tokens[7]), atoi(tokens[8]), atoi(tokens[9]),
+                atoi(tokens[10])};
+  int flags = atoi(tokens[11]);
+
+  // check the flags if it is a portal or portal exit
+  if (flags & LINE_FLAG_PORTAL || flags & LINE_FLAG_PORTAL_EXIT) {
+    int output_line = atoi(tokens[12]);
+    int output_sect = atoi(tokens[13]);
+    int flipped = atoi(tokens[14]);
+
+    // create a portal
+    Portal *portal = malloc(sizeof(Portal));
+    *portal = (Portal){output_line, output_sect, flipped};
+    state.sectors[sector_id].lines[id] =
+        (LineSegment){start, end, color, id, sector_id, flags, portal};
+  } else {
+    state.sectors[sector_id].lines[id] =
+        (LineSegment){start, end, color, id, sector_id, flags, NULL};
+  }
+  printf("created line - ID: %d sector_id: %d start: (%f,%f) end: (%f,%f) - "
+         "color: (%d,%d,%d,%d)\n",
+         id, sector_id, start.x, start.y, end.x, end.y, color.r, color.g,
+         color.b, color.a);
 }
 void handle_line(char *line) {
   // split the line into spaces, as that is what is used for the delimiter
@@ -36,6 +72,8 @@ void handle_line(char *line) {
   // TODO: stuff
   if (strcmp(tokens[0], "sec") == 0) {
     create_sector(tokens);
+  } else if (strcmp(tokens[0], "lineseg") == 0) {
+    create_line(tokens);
   }
 
   // free the line
@@ -54,7 +92,7 @@ int load_map(char *name) {
   free(path);
 
   if (fptr == NULL) {
-    fprintf(stderr, "Could not read file!");
+    fprintf(stderr, "Map file doesnt exist!");
     return 1;
   }
   char line[1000];
@@ -62,6 +100,7 @@ int load_map(char *name) {
     handle_line(line);
   }
 
+  printf("Loaded map: %s.map\n", name);
   fclose(fptr);
   return 0;
 }

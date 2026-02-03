@@ -53,7 +53,7 @@ void render_map() {
                     (rgba){128, 128, 128, 128});
   }
 }
-
+void create_new_sector() {}
 void editor_on_click() {
   if (!editor.portal_mode) {
     if (!editor.even_click) {
