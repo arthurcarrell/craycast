@@ -4,31 +4,33 @@
 #include <string.h>
 
 void write_line(FILE *fptr, LineSegment *lineseg) {
-  fprintf(fptr, "lineseg %d %d %f %f %f %f %d %d %d %d %d", lineseg->id,
-          lineseg->sector_id, lineseg->start.x, lineseg->start.y,
-          lineseg->end.x, lineseg->end.y, lineseg->color.r, lineseg->color.g,
-          lineseg->color.b, lineseg->color.a, lineseg->flags);
+  fprintf(fptr, "lineseg %d %d %f %f %f %f %d %d %d %d %d", lineseg->id, lineseg->sector_id, lineseg->start.x,
+          lineseg->start.y, lineseg->end.x, lineseg->end.y, lineseg->color.r, lineseg->color.g, lineseg->color.b,
+          lineseg->color.a, lineseg->flags);
 
   if (lineseg->portal != NULL) {
-    fprintf(fptr, " %d %d %d\n", lineseg->portal->output_id,
-            lineseg->portal->output_sector_id, lineseg->portal->flipped);
+    fprintf(fptr, " %d %d %d\n", lineseg->portal->output_id, lineseg->portal->output_sector_id,
+            lineseg->portal->flipped);
   } else {
     fprintf(fptr, "\n");
   }
 }
 
 void write_sector(FILE *fptr, Sector sector) {
-  fprintf(fptr, "sec %d %d %d %d %d %d %d %d %d %d %d\n", sector.id,
-          sector.line_count, sector.ceil_color.r, sector.ceil_color.g,
-          sector.ceil_color.b, sector.ceil_color.a, sector.floor_color.r,
-          sector.floor_color.g, sector.floor_color.b, sector.floor_color.a,
-          sector.light_modifer);
+  fprintf(fptr, "sec %d %d %d %d %d %d %d %d %d %d %d\n", sector.id, sector.line_count, sector.ceil_color.r,
+          sector.ceil_color.g, sector.ceil_color.b, sector.ceil_color.a, sector.floor_color.r, sector.floor_color.g,
+          sector.floor_color.b, sector.floor_color.a, sector.light_modifer);
 
   for (int i = 0; i < sector.line_count; i++) {
     write_line(fptr, &sector.lines[i]);
   }
 }
-int save_map(char *name, Sector *sectors, int count) {
+
+void save_pos(FILE *fptr, vec2f start, vec2f end) {
+  fprintf(fptr, "spwn %f %f\n", start.x, start.y);
+  fprintf(fptr, "end %f %f\n", end.x, end.y);
+}
+int save_map(char *name, Sector *sectors, int count, vec2f start, vec2f end) {
   // create the path
   char *path = malloc(strlen(name) + 10 * sizeof(char));
   sprintf(path, "maps/%s.map", name);
@@ -50,7 +52,7 @@ int save_map(char *name, Sector *sectors, int count) {
   }
 
   // now that the file is created write the data to it
-  fprintf(fptr, "!MAP\n");
+  save_pos(fptr, start, end);
 
   for (int i = 0; i < count; i++) {
     fprintf(fptr, "\n");

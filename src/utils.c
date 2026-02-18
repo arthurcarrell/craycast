@@ -53,3 +53,7 @@ inline vec2i asvec2i(vec2f vec2) { return (vec2i){vec2.x, vec2.y}; }
 int rgba_to_int(rgba color) {
   return SDL_MapRGBA(framebuf.format, NULL, color.r, color.g, color.b, color.a);
 }
+
+int cmp_rgba(rgba a, rgba b) {
+  return (a.r == b.r && a.g == b.g && a.b == b.b && a.a == b.a);
+}

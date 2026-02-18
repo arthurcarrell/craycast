@@ -6,6 +6,9 @@
 #include "utils.h"
 #include <math.h>
 
+#define CEIL_DARKNESS_DIV 4
+#define FLOOR_DARKNESS_DIV 4
+
 void render_world() {
   // do a raycast for each pixel on the screen
   for (int i = 0; i < WINDOW_WIDTH; i++) {
@@ -68,28 +71,28 @@ void render_world() {
 
       // Ceiling
 
-      int cr = (currsec->ceil_color.r - darkness) > 0
-                   ? (currsec->ceil_color.r - darkness)
+      int cr = (currsec->ceil_color.r - (darkness / CEIL_DARKNESS_DIV)) > 0
+                   ? (currsec->ceil_color.r - (darkness / CEIL_DARKNESS_DIV))
                    : 0;
-      int cg = (currsec->ceil_color.g - darkness) > 0
-                   ? (currsec->ceil_color.g - darkness)
+      int cg = (currsec->ceil_color.g - (darkness / CEIL_DARKNESS_DIV)) > 0
+                   ? (currsec->ceil_color.g - (darkness / CEIL_DARKNESS_DIV))
                    : 0;
-      int cb = (currsec->ceil_color.b - darkness) > 0
-                   ? (currsec->ceil_color.b - darkness)
+      int cb = (currsec->ceil_color.b - (darkness / CEIL_DARKNESS_DIV)) > 0
+                   ? (currsec->ceil_color.b - (darkness / CEIL_DARKNESS_DIV))
                    : 0;
 
       ceilcolor[i] = rgba_to_int((rgba){cr, cg, cb});
 
       // Floor
 
-      int fr = (currsec->floor_color.r - darkness) > 0
-                   ? (currsec->floor_color.r - darkness)
+      int fr = (currsec->floor_color.r - (darkness / FLOOR_DARKNESS_DIV)) > 0
+                   ? (currsec->floor_color.r - (darkness / FLOOR_DARKNESS_DIV))
                    : 0;
-      int fg = (currsec->floor_color.g - darkness) > 0
-                   ? (currsec->floor_color.g - darkness)
+      int fg = (currsec->floor_color.g - (darkness / FLOOR_DARKNESS_DIV)) > 0
+                   ? (currsec->floor_color.g - (darkness / FLOOR_DARKNESS_DIV))
                    : 0;
-      int fb = (currsec->floor_color.b - darkness) > 0
-                   ? (currsec->floor_color.b - darkness)
+      int fb = (currsec->floor_color.b - (darkness / FLOOR_DARKNESS_DIV)) > 0
+                   ? (currsec->floor_color.b - (darkness / FLOOR_DARKNESS_DIV))
                    : 0;
 
       floorcolor[i] = rgba_to_int((rgba){fr, fg, fb});

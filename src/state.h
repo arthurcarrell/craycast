@@ -20,9 +20,10 @@ typedef struct {
   SDL_Window *window;
   SDL_Renderer *renderer;
   SDL_Texture *texture;
-  LineSegment *lines;
   Sector *sectors;
   Actor player;
+  Actor end;
+  Actor start;
   int sector_count;
   int line_count;
 

@@ -45,4 +45,7 @@ int clamp(int num, int max, int min);
 inline vec2i asvec2i(vec2f);
 int rgba_to_int(rgba color);
 
+// compares two colors
+int cmp_rgba(rgba a, rgba b);
+
 #endif // !UTILS_H

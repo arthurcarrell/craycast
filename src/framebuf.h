@@ -24,8 +24,7 @@ void framebuf_destroy(Framebuffer *fb);
 
 // --- Draw functions ---
 void framebuf_clear(Framebuffer *fb);
-static inline void framebuf_point_int(Framebuffer *fb, int x, int y,
-                                      rgba color);
+void framebuf_point_int(Framebuffer *fb, int x, int y, rgba color);
 void framebuf_line(Framebuffer *fb, Line line);
 void framebuf_line_s(Framebuffer *fb, int x0, int y0, int x1, int y1,
                      rgba color);

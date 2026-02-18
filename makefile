@@ -1,6 +1,7 @@
+# I got Gemini to write this version of it - I dont really consider this a part of the project
 CC = gcc
 CFLAGS = -Wall -Wextra -O0 -Isrc -fsanitize=address,undefined -g
-SDL_FLAGS = -lSDL3
+SDL_FLAGS = -lSDL3 -lSDL3_image
 LD_FLAGS = -lm -fsanitize=address -fsanitize=undefined -g
 
 # 1. Find all .c files in src AND any subdirectories (like map_parser)

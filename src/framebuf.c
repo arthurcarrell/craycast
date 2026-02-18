@@ -97,8 +97,7 @@ void framebuf_point(Framebuffer *fb, vec2i point, rgba color) {
   fb->pixels[point.x + point.y * WINDOW_WIDTH] = rgba_to_int(color);
 }
 
-static inline void framebuf_point_int(Framebuffer *fb, int x, int y,
-                                      rgba color) {
+void framebuf_point_int(Framebuffer *fb, int x, int y, rgba color) {
   if (x < 0 || x > WINDOW_WIDTH || y < 0 || y > WINDOW_HEIGHT)
     return;
   fb->pixels[x + y * WINDOW_WIDTH] = rgba_to_int(color);

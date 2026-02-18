@@ -6,6 +6,7 @@
 // Line flags
 #define LINE_FLAG_PORTAL (1u << 1)
 #define LINE_FLAG_PORTAL_EXIT (1u << 2)
+#define LINE_FLAG_INTERNAL (1u << 3)
 
 // In its most simple form, a struct that has a start and an end point
 // Gets pretty complicated from there on out though - may be refactored
@@ -44,8 +45,7 @@ vec2f get_line_intersections(Line *line1, Line *line2, int *found);
 Line create_simple_line(vec2f start, vec2f end);
 LineSegment create_line_with_flags(vec2f start, vec2f end, unsigned int flags);
 Line create_render_line(vec2f start, vec2f end, rgba color);
-LineSegment create_portal_line(vec2f start, vec2f end, int output_id,
-                               int flipped);
+LineSegment create_portal_line(vec2f start, vec2f end, int output_id, int flipped);
 
 Line lineseg_line(LineSegment line);
 // Checks if a point is on a line. Returns 0 for no and 1 for yes.
@@ -57,8 +57,7 @@ int is_on_line(vec2f pos, Line line, float tolerance);
 
 // Gets the Line that a point is touching, if the point is not touching a line,
 // then return NULL
-LineSegment *get_line_at_point(vec2f point, LineSegment *lines, int line_count,
-                               float tolerance);
+LineSegment *get_line_at_point(vec2f point, LineSegment *lines, int line_count, float tolerance);
 
 // Returns a decimal percentage on how far a position is on the line.
 // 0 is the start and 1 is the end.

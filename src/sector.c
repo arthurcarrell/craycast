@@ -5,9 +5,7 @@
 #include <math.h>
 #include <stdlib.h>
 
-void destroy_sector(Sector *sector) {
-  destroy_linesegs(sector->lines, &sector->line_count);
-}
+void destroy_sector(Sector *sector) { destroy_linesegs(sector->lines, &sector->line_count); }
 
 void destroy_sectors(Sector **sectors, int *amount) {
   for (int i = 0; i < *amount; i++) {
@@ -18,9 +16,9 @@ void destroy_sectors(Sector **sectors, int *amount) {
   *amount = 0;
 }
 
-Sector *sector_create(int max_lines, rgba ceil_color, int ceil_height,
-                      rgba floor_color, int floor_height, int light_modifer) {
-  LineSegment *lines = calloc(10, sizeof(LineSegment));
+Sector *sector_create(int max_lines, rgba ceil_color, int ceil_height, rgba floor_color, int floor_height,
+                      int light_modifer) {
+  LineSegment *lines = calloc(max_lines, sizeof(LineSegment));
   Sector sector = (Sector){.id = state.sector_count,
                            .line_count = 0,
                            .lines = lines,
@@ -51,13 +49,17 @@ int is_point_in_sector(vec2f point, Sector *sector) {
     vec2f p1 = seg->start;
     vec2f p2 = seg->end;
 
+    // this line exists within the sector, so its not a part of the bounding box
+    if (seg->flags & LINE_FLAG_INTERNAL) {
+      continue;
+    }
+
     // Ignore horizontal edges
     if (fabsf(p1.y - p2.y) < 1e-6f)
       continue;
 
     // Check if point y is within vertical range of edge
-    if (y > fminf(p1.y, p2.y) && y <= fmaxf(p1.y, p2.y) &&
-        x <= fmaxf(p1.x, p2.x)) {
+    if (y > fminf(p1.y, p2.y) && y <= fmaxf(p1.y, p2.y) && x <= fmaxf(p1.x, p2.x)) {
 
       float xintersect = (y - p1.y) * (p2.x - p1.x) / (p2.y - p1.y) + p1.x;
 

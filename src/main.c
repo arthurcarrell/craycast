@@ -17,7 +17,8 @@
 #include <stdio.h>
 
 #include "actor.h"
-#include "editor.h"   // has all the editor functions
+#include "editor.h" // has all the editor functions
+#include "font.h"
 #include "framebuf.h" // the framebuffer
 #include "input.h"    // gets input
 #include "map_parser/parse.h"
@@ -45,14 +46,16 @@ void init() {
   // framebuffer
   state.renderer = framebuf_init(&framebuf, state.window, (rgba){0, 0, 0, 255});
   // editor
+  font_init(state.renderer);
   editor_init();
   load_map("untitled");
 }
 
 void destroy() {
   printf("Cleaning up\n");
-  save_map("untitled", state.sectors, state.sector_count);
+  save_map("untitled", state.sectors, state.sector_count, state.start.pos, state.end.pos);
   sdl_destroy();
+  font_destroy();
   framebuf_destroy(&framebuf);
   state_destroy();
   printf("Clean up complete\n");
@@ -98,14 +101,6 @@ int main(int argc, char *argv[]) {
       }
     }
     // --- MAIN ---
-    // Im actually very dumb - all of the memory issues that I've been having is
-    // because I havent deleted the object files. This means that one file
-    // thinks that something in state is at location X, when its really at
-    // location Y
-    if (state.mouse.canary != 0xDECAFBAD) {
-      fprintf(stderr, "Mouse canary got corrupted! Something's setting memory "
-                      "where it shouldnt\n");
-    }
     // Clear the framebuffer
     framebuf_clear(&framebuf);
 

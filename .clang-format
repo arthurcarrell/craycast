@@ -1,0 +1,5 @@
+---
+# This allows the rest of the settings to be inherited from a standard style
+BasedOnStyle: LLVM 
+# Change 120 to whatever column width you prefer (or 0 for no limit)
+ColumnLimit: 120
