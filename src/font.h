@@ -15,7 +15,7 @@ typedef struct {
 extern Font font;
 
 int font_init(SDL_Renderer *renderer);
-void write_character(vec2f pos, char chr, rgba color); // TODO: Dont expose this
-void write_string(char *string, vec2f pos, rgba color);
+void write_character(vec2f pos, char chr, rgba color, int size); // TODO: Dont expose this
+void write_string(char *string, vec2f pos, rgba color, int size);
 void font_destroy();
 #endif

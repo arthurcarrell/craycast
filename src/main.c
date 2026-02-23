@@ -26,6 +26,7 @@
 #include "sdl.h" // Create and destroy SDL
 #include "sector.h"
 #include "state.h" // 'god struct' and 'god macros'
+#include "title.h"
 #include "utils.h" // math functions, structs and other misc stuff
 #include "world.h"
 
@@ -67,7 +68,9 @@ void update() {
 }
 
 void render() {
-  if (editor.map_mode) {
+  if (state.in_menu) {
+    render_title();
+  } else if (editor.map_mode) {
     render_map();
   } else {
     render_world();

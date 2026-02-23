@@ -14,27 +14,27 @@ Editor editor;
 
 void editor_text() {
   if (editor.mode == EDITOR_MODE_PORTAL) {
-    write_string("portal mode", (vec2f){WINDOW_WIDTH - (10 * 12) - 1, 11}, (rgba){255, 255, 255, 255});
+    write_string("portal mode", (vec2f){WINDOW_WIDTH - (10 * 12) - 1, 11}, (rgba){255, 255, 255, 255}, 1);
   } else if (editor.mode == EDITOR_MODE_SECTOR) {
-    write_string("map mode", (vec2f){WINDOW_WIDTH - (10 * 9) - 1, 11}, (rgba){255, 255, 255, 255});
+    write_string("map mode", (vec2f){WINDOW_WIDTH - (10 * 9) - 1, 11}, (rgba){255, 255, 255, 255}, 1);
   } else if (editor.mode == EDITOR_MODE_PLACING_POINTS) {
-    write_string("creating sector", (vec2f){WINDOW_WIDTH - (10 * 15) - 1, 11}, (rgba){255, 255, 255, 255});
+    write_string("creating sector", (vec2f){WINDOW_WIDTH - (10 * 15) - 1, 11}, (rgba){255, 255, 255, 255}, 1);
   } else if (editor.mode == EDITOR_MODE_ENDPOS) {
-    write_string("placing flag", (vec2f){WINDOW_WIDTH - (10 * 12) - 1, 11}, (rgba){255, 255, 255, 255});
+    write_string("placing flag", (vec2f){WINDOW_WIDTH - (10 * 12) - 1, 11}, (rgba){255, 255, 255, 255}, 1);
   }
 
   int warnings = 0;
   if (state.start.pos.x == 0 && state.start.pos.y == 0) {
-    write_string("a start position", (vec2f){10, WINDOW_HEIGHT - (11 * (3 - warnings))}, (rgba){255, 64, 64, 255});
+    write_string("a start position", (vec2f){10, WINDOW_HEIGHT - (11 * (3 - warnings))}, (rgba){255, 64, 64, 255}, 1);
     warnings++;
   }
   if (state.end.pos.x == 0 && state.end.pos.y == 0) {
-    write_string("an end position", (vec2f){10, WINDOW_HEIGHT - (11 * (3 - warnings))}, (rgba){255, 64, 64, 255});
+    write_string("an end position", (vec2f){10, WINDOW_HEIGHT - (11 * (3 - warnings))}, (rgba){255, 64, 64, 255}, 1);
     warnings++;
   }
 
   if (warnings > 0) {
-    write_string("your map is missing:", (vec2f){10, WINDOW_HEIGHT - (11 * 4)}, (rgba){255, 64, 64, 255});
+    write_string("your map is missing:", (vec2f){10, WINDOW_HEIGHT - (11 * 4)}, (rgba){255, 64, 64, 255}, 1);
   }
 }
 
@@ -113,22 +113,22 @@ void draw_sector_creation() {
 void draw_mouse_string(LineSegment line) {
   char data[100];
   sprintf(data, "sector id: %d\nline id: %d", line.sector_id, line.id);
-  write_string(data, (vec2f){state.mouse.pos.x + 5, state.mouse.pos.y - 20}, (rgba){255, 255, 255, 255});
+  write_string(data, (vec2f){state.mouse.pos.x + 5, state.mouse.pos.y - 20}, (rgba){255, 255, 255, 255}, 1);
   if (editor.mode != EDITOR_MODE_PORTAL) {
-    write_string("click to change line color", (vec2f){state.mouse.pos.x + 5, state.mouse.pos.y}, line.color);
+    write_string("click to change line color", (vec2f){state.mouse.pos.x + 5, state.mouse.pos.y}, line.color, 1);
   } else {
     if (editor.even_click) {
       write_string("click to set as portal entrance", (vec2f){state.mouse.pos.x + 5, state.mouse.pos.y},
-                   (rgba){55, 128, 128, 255});
+                   (rgba){55, 128, 128, 255}, 1);
     } else {
       write_string("click to set as portal exit", (vec2f){state.mouse.pos.x + 5, state.mouse.pos.y},
-                   (rgba){255, 190, 0, 255});
+                   (rgba){255, 190, 0, 255}, 1);
     }
   }
 
   if (line.flags & LINE_FLAG_PORTAL_EXIT) {
     write_string("press 'f' to flip direction", (vec2f){state.mouse.pos.x + 5, state.mouse.pos.y + 10},
-                 (rgba){255, 255, 255, 255});
+                 (rgba){255, 255, 255, 255}, 1);
   }
 }
 
@@ -186,10 +186,10 @@ void render_map() {
       color = (rgba){255, 255, 0, 255};
     }
     char icon = (editor.mode == EDITOR_MODE_ENDPOS) ? 'F' : '+';
-    write_character(state.mouse.pos, icon, color);
+    write_character(state.mouse.pos, icon, color, 2);
   } else {
-    write_character(state.end.pos, 'F', (rgba){255, 255, 0, 255});
-    write_character(state.start.pos, '+', (rgba){255, 255, 0, 255});
+    write_character(state.end.pos, 'F', (rgba){255, 255, 0, 255}, 2);
+    write_character(state.start.pos, '+', (rgba){255, 255, 0, 255}, 2);
   }
 
   // if drawing a line, show it

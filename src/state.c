@@ -16,7 +16,7 @@ void state_init() {
   state.camera.rot = 0.0;
   state.camera.fov = deg_to_radians(60);
   state.camera.dist = 500; // darkness means that after ~300-400 nothing will show anyway
-
+  state.in_menu = 1;
   // --- MISC ---
   state.mouse.pos = (vec2f){0, 0};
   state.mouse.canary = 0xDECAFBAD; // used to check if data has been corrupted,

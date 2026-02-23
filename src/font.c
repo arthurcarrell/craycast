@@ -26,7 +26,7 @@ int load_font(char *path, SDL_Renderer *renderer) {
   return 1;
 }
 
-void write_character(vec2f pos, char chr, rgba color) {
+void write_character(vec2f pos, char chr, rgba color, int size) {
   // get the location of the character in the font
   int index;
   int found = 0;
@@ -49,23 +49,27 @@ void write_character(vec2f pos, char chr, rgba color) {
       SDL_ReadSurfacePixel(font.surface, x, starty + y, NULL, NULL, NULL, &a);
 
       if (a != 0) {
-        framebuf_point_int(&framebuf, pos.x + x, pos.y + y, color);
+        for (int sx = 0; sx < size; sx++) {
+          for (int sy = 0; sy < size; sy++) {
+            framebuf_point_int(&framebuf, pos.x + x * size + sx, pos.y + y * size + sy, color);
+          }
+        }
       }
     }
   }
 }
 
-void write_string(char *string, vec2f pos, rgba color) {
+void write_string(char *string, vec2f pos, rgba color, int size) {
   int length = strlen(string);
   int originalx = pos.x;
   int gap = 1;
   for (int i = 0; i < length; i++) {
     if (string[i] != '\n') {
-      write_character(pos, string[i], color);
-      pos.x += gap + 9;
+      write_character(pos, string[i], color, size);
+      pos.x += gap + (9 * size);
     } else {
       pos.x = originalx;
-      pos.y += 10;
+      pos.y += 10 * size;
     }
   }
 }

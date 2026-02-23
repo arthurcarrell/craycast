@@ -26,6 +26,7 @@ typedef struct {
   Actor start;
   int sector_count;
   int line_count;
+  int in_menu;
 
   int quit;
   float delta;
