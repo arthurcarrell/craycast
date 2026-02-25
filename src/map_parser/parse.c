@@ -77,8 +77,8 @@ void handle_line(char *line) {
 
 int load_map(char *name) {
   // create the path
-  char *path = malloc((strlen(name) + 10) * sizeof(char));
-  sprintf(path, "maps/%s.map", name);
+  char *path = malloc((strlen(name) + 6) * sizeof(char));
+  sprintf(path, "maps/%s", name);
 
   // load the file from the path
   FILE *fptr = fopen(path, "r");
@@ -95,7 +95,7 @@ int load_map(char *name) {
     handle_line(line);
   }
 
-  printf("Loaded map: %s.map\n", name);
+  printf("Loaded map: %s\n", name);
   fclose(fptr);
   return 0;
 }

@@ -1,12 +1,15 @@
 #include "actor.h"
 #include "editor.h"
 #include "state.h"
+#include "title.h"
 #include "utils.h"
 #include <SDL3/SDL_keycode.h>
 
 // Ran every time a mouse button is pressed
 void event_mouse_down() {
-  if (editor.map_mode) {
+  if (state.in_menu) {
+    title_on_click();
+  } else if (editor.map_mode) {
     editor_on_click();
   }
 }
@@ -31,12 +34,10 @@ void get_keyboard_input() {
     actor_move(&state.player, -(movespeed * state.delta), state.player.rot);
   }
   if (key_states[SDL_SCANCODE_A]) {
-    actor_move(&state.player, -(movespeed * state.delta),
-               state.player.rot + NINETY_DEGINRAD);
+    actor_move(&state.player, -(movespeed * state.delta), state.player.rot + NINETY_DEGINRAD);
   }
   if (key_states[SDL_SCANCODE_D]) {
-    actor_move(&state.player, -(movespeed * state.delta),
-               state.player.rot - NINETY_DEGINRAD);
+    actor_move(&state.player, -(movespeed * state.delta), state.player.rot - NINETY_DEGINRAD);
   }
 }
 

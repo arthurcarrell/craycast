@@ -17,5 +17,6 @@ extern Font font;
 int font_init(SDL_Renderer *renderer);
 void write_character(vec2f pos, char chr, rgba color, int size); // TODO: Dont expose this
 void write_string(char *string, vec2f pos, rgba color, int size);
+int get_text_width(int text_size, int font_size);
 void font_destroy();
 #endif

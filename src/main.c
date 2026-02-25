@@ -49,16 +49,17 @@ void init() {
   // editor
   font_init(state.renderer);
   editor_init();
-  load_map("untitled");
+  title_init();
 }
 
 void destroy() {
   printf("Cleaning up\n");
-  save_map("untitled", state.sectors, state.sector_count, state.start.pos, state.end.pos);
+  save_map(maps.maps[maps.last_selected], state.sectors, state.sector_count, state.start.pos, state.end.pos);
   sdl_destroy();
   font_destroy();
   framebuf_destroy(&framebuf);
   state_destroy();
+  title_destroy();
   printf("Clean up complete\n");
 }
 

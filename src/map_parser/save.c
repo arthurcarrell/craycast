@@ -32,8 +32,8 @@ void save_pos(FILE *fptr, vec2f start, vec2f end) {
 }
 int save_map(char *name, Sector *sectors, int count, vec2f start, vec2f end) {
   // create the path
-  char *path = malloc(strlen(name) + 10 * sizeof(char));
-  sprintf(path, "maps/%s.map", name);
+  char *path = malloc(strlen(name) + 6 * sizeof(char));
+  sprintf(path, "maps/%s", name);
 
   if (path == NULL) {
     printf("Failed to set path!");
@@ -59,6 +59,6 @@ int save_map(char *name, Sector *sectors, int count, vec2f start, vec2f end) {
     write_sector(fptr, sectors[i]);
   }
 
-  printf("Saved map as %s.map\n", name);
+  printf("Saved map as %s\n", name);
   return 1;
 }

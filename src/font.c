@@ -74,6 +74,8 @@ void write_string(char *string, vec2f pos, rgba color, int size) {
   }
 }
 
+int get_text_width(int text_size, int size) { return 1 + 9 * size * text_size; }
+
 int font_init(SDL_Renderer *renderer) {
   char *path = malloc((strlen("font") + 15) * sizeof(char));
   sprintf(path, "textures/%s.png", "font");
