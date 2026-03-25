@@ -204,6 +204,15 @@ void render_map() {
     }
     framebuf_line_s(&framebuf, startpos.x, startpos.y, endpos.x, endpos.y, color);
   }
+
+  rgba playercol = (rgba){0};
+  if (get_sector_of_point(state.player.pos) == NULL) {
+    playercol = (rgba){255, 0, 0, 255};
+  } else {
+    playercol = (rgba){255, 255, 0, 255};
+  }
+  vec2f drawpos = (vec2f){state.player.pos.x - 4, state.player.pos.y - 6};
+  write_character(drawpos, 'p', playercol, 1);
 }
 
 void create_point(vec2f pos) {

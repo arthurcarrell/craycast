@@ -14,13 +14,11 @@ void state_init() {
 
   state.camera.pos = (vec2f){50, WINDOW_HEIGHT / 2};
   state.camera.rot = 0.0;
-  state.camera.fov = deg_to_radians(60);
-  state.camera.dist = 500; // darkness means that after ~300-400 nothing will show anyway
+  state.camera.fov = deg_to_radians(1);
+  state.camera.dist = 400; // darkness means that after ~300-400 nothing will show anyway
   state.in_menu = 1;
   // --- MISC ---
   state.mouse.pos = (vec2f){0, 0};
-  state.mouse.canary = 0xDECAFBAD; // used to check if data has been corrupted,
-                                   // I was having a problem
   state.delta = 0;
 
   // -- ACTORS --
@@ -32,9 +30,6 @@ void state_init() {
   state.sectors = calloc(100, sizeof(Sector));
   state.sector_count = 0;
 
-  // for now, just create a sector
-  // sector_create(20, (rgba){0, 0, 0, 255}, 255, (rgba){0, 0, 0, 255}, 0, 0);
-  // done :)
   printf("State initalised!\n");
 }
 

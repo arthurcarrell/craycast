@@ -9,7 +9,6 @@
 #define LINE_FLAG_INTERNAL (1u << 3)
 
 // In its most simple form, a struct that has a start and an end point
-// Gets pretty complicated from there on out though - may be refactored
 typedef struct {
   vec2f start;
   vec2f end;

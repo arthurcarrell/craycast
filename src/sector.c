@@ -35,12 +35,10 @@ Sector *sector_create(int max_lines, rgba ceil_color, int ceil_height, rgba floo
 }
 
 int is_point_in_sector(vec2f point, Sector *sector) {
-  // https://www.geeksforgeeks.org/dsa/how-to-check-if-a-given-point-lies-inside-a-polygon/
-  // - Adapted for C
   int line_count = sector->line_count;
   LineSegment *linesegs = sector->lines;
-  int x = point.x;
-  int y = point.y;
+  float x = point.x;
+  float y = point.y;
   int inside = 0;
 
   for (int i = 0; i < sector->line_count; i++) {
@@ -54,11 +52,10 @@ int is_point_in_sector(vec2f point, Sector *sector) {
       continue;
     }
 
-    // Ignore horizontal edges
-    if (fabsf(p1.y - p2.y) < 1e-6f)
+    if (fabsf(p1.y - p2.y) < 1e-6f) {
       continue;
+    }
 
-    // Check if point y is within vertical range of edge
     if (y > fminf(p1.y, p2.y) && y <= fmaxf(p1.y, p2.y) && x <= fmaxf(p1.x, p2.x)) {
 
       float xintersect = (y - p1.y) * (p2.x - p1.x) / (p2.y - p1.y) + p1.x;

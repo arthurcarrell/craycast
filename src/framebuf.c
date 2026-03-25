@@ -38,7 +38,7 @@ SDL_Renderer *framebuf_init(Framebuffer *fb, SDL_Window *window, rgba color) {
     fprintf(stderr, "Failed to allocate pixels in framebuffer!\n");
     exit(1);
   }
-  fb->background = color;
+  fb->background = rgba_to_int(color);
   framebuf_clear(fb);
 
   // create the surface to render on
@@ -54,10 +54,11 @@ SDL_Renderer *framebuf_init(Framebuffer *fb, SDL_Window *window, rgba color) {
   // issues
   fb->format = SDL_GetPixelFormatDetails(fb->screen->format);
 
-  // create  a renderer to go with it
+  // create a renderer to go with it
   SDL_Renderer *renderer = SDL_CreateSoftwareRenderer(fb->screen);
   if (renderer == NULL) {
     fprintf(stderr, "Failed to create renderer! %s\n", SDL_GetError());
+    exit(1);
   }
   printf("Framebuffer initalised!\n");
   return renderer;
@@ -70,12 +71,10 @@ void framebuf_screen(Framebuffer *fb, SDL_Window *window) {
   uint8_t *src = (uint8_t *)fb->pixels;
   int pitch = fb->screen->pitch;
   if (pitch == WINDOW_WIDTH * sizeof(uint32_t)) {
-    memcpy(fb->screen->pixels, fb->pixels,
-           WINDOW_WIDTH * WINDOW_HEIGHT * sizeof(uint32_t));
+    memcpy(fb->screen->pixels, fb->pixels, WINDOW_WIDTH * WINDOW_HEIGHT * sizeof(uint32_t));
   } else {
     for (int y = 0; y < WINDOW_HEIGHT; y++) {
-      memcpy(dst + y * pitch, src + y * WINDOW_WIDTH * sizeof(uint32_t),
-             WINDOW_WIDTH * sizeof(uint32_t));
+      memcpy(dst + y * pitch, src + y * WINDOW_WIDTH * sizeof(uint32_t), WINDOW_WIDTH * sizeof(uint32_t));
     }
   }
 
@@ -90,7 +89,7 @@ void framebuf_destroy(Framebuffer *fb) {
 void framebuf_clear(Framebuffer *fb) {
   // the biggest optimisation I've made, god bless memset
   // Changing from a for loop to this has instantly increased framerate by 30
-  memset(fb->pixels, 0, WINDOW_WIDTH * WINDOW_HEIGHT * sizeof(uint32_t));
+  memset(fb->pixels, fb->background, WINDOW_WIDTH * WINDOW_HEIGHT * sizeof(uint32_t));
 }
 
 void framebuf_point(Framebuffer *fb, vec2i point, rgba color) {
@@ -113,13 +112,15 @@ void framebuf_line_hor(Framebuffer *fb, int x0, int x1, int y, rgba color) {
     x1 = swp;
   }
 
-  if (x1 < 0 || x0 >= WINDOW_WIDTH)
+  if (x1 < 0 || x0 >= WINDOW_WIDTH) {
     return;
-
-  if (x0 < 0)
+  }
+  if (x0 < 0) {
     x0 = 0;
-  if (x1 >= WINDOW_WIDTH)
+  }
+  if (x1 >= WINDOW_WIDTH) {
     x1 = WINDOW_WIDTH - 1;
+  }
 
   uint32_t intcol = rgba_to_int(color);
   uint32_t *row = fb->pixels + y * WINDOW_WIDTH + x0;
@@ -130,8 +131,10 @@ void framebuf_line_hor(Framebuffer *fb, int x0, int x1, int y, rgba color) {
 }
 
 void framebuf_line_vert(Framebuffer *fb, int x, int y0, int y1, rgba color) {
-  if (x < 0 || x >= WINDOW_WIDTH) // its off the screen
+  if (x < 0 || x >= WINDOW_WIDTH) {
+    // its off the screen
     return;
+  }
 
   if (y0 > y1) {
     int swp = y0;
@@ -139,8 +142,9 @@ void framebuf_line_vert(Framebuffer *fb, int x, int y0, int y1, rgba color) {
     y1 = swp;
   }
 
-  if (y1 < 0 || y0 >= WINDOW_HEIGHT)
+  if (y1 < 0 || y0 >= WINDOW_HEIGHT) {
     return;
+  }
 
   int y_start = (y0 < 0) ? 0 : y0;
   int y_end = (y1 >= WINDOW_HEIGHT) ? WINDOW_HEIGHT - 1 : y1;
@@ -154,23 +158,23 @@ void framebuf_line_vert(Framebuffer *fb, int x, int y0, int y1, rgba color) {
   }
 }
 
-void framebuf_column_optimised(Framebuffer *fb, int *top, int *bottom,
-                               uint32_t *colors, int count) {
+void framebuf_column_optimised(Framebuffer *fb, int *top, int *bottom, uint32_t *colors, int count) {
   // draw the range of pixels for each column
   for (int x = 0; x < WINDOW_WIDTH; x++) {
-    if (top[x] < 0 || bottom[x] < 0)
+    if (top[x] < 0 || bottom[x] < 0) {
       continue; // out of bounds
+    }
+
     uint32_t *ptr = fb->pixels + top[x] * WINDOW_WIDTH + x;
     int height = bottom[x] - top[x] + 1;
+
     for (int y = 0; y < height; y++) {
       *ptr = colors[x];
       ptr += WINDOW_WIDTH;
     }
   }
 }
-void framebuf_line_diag(Framebuffer *fb, int x0, int x1, int y0, int y1,
-                        rgba color) {
-
+void framebuf_line_diag(Framebuffer *fb, int x0, int x1, int y0, int y1, rgba color) {
   // https://en.wikipedia.org/wiki/Bresenham%27s_line_algorithm#All_cases
   int dx = abs(x1 - x0);
   int sx = (x0 < x1) ? 1 : -1;
@@ -202,8 +206,8 @@ void framebuf_line_diag(Framebuffer *fb, int x0, int x1, int y0, int y1,
     }
   }
 }
-void framebuf_line_s(Framebuffer *fb, int x0, int y0, int x1, int y1,
-                     rgba color) {
+
+void framebuf_line_s(Framebuffer *fb, int x0, int y0, int x1, int y1, rgba color) {
   if (y0 == y1) {
     framebuf_line_hor(fb, x0, x1, y0, color);
   } else if (x0 == x1) {
@@ -212,7 +216,7 @@ void framebuf_line_s(Framebuffer *fb, int x0, int y0, int x1, int y1,
     framebuf_line_diag(fb, x0, x1, y0, y1, color);
   }
 }
+
 void framebuf_line(Framebuffer *fb, Line line) {
-  framebuf_line_s(fb, line.start.x, line.start.y, line.end.x, line.end.y,
-                  line.color);
+  framebuf_line_s(fb, line.start.x, line.start.y, line.end.x, line.end.y, line.color);
 }

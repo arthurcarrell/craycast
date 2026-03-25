@@ -11,7 +11,7 @@
 
 typedef struct {
   uint32_t *pixels;
-  rgba background;
+  uint32_t background;
   SDL_Surface *screen;
   SDL_PixelFormatDetails *format;
 } Framebuffer;
@@ -26,12 +26,10 @@ void framebuf_destroy(Framebuffer *fb);
 void framebuf_clear(Framebuffer *fb);
 void framebuf_point_int(Framebuffer *fb, int x, int y, rgba color);
 void framebuf_line(Framebuffer *fb, Line line);
-void framebuf_line_s(Framebuffer *fb, int x0, int y0, int x1, int y1,
-                     rgba color);
+void framebuf_line_s(Framebuffer *fb, int x0, int y0, int x1, int y1, rgba color);
 
 void framebuf_line_vert(Framebuffer *fb, int x, int y0, int y1, rgba color);
-void framebuf_column_optimised(Framebuffer *fb, int *top, int *bottom,
-                               uint32_t *colors, int count);
+void framebuf_column_optimised(Framebuffer *fb, int *top, int *bottom, uint32_t *colors, int count);
 // void framebuf_rect(Framebuffer *fb, vec2i start, vec2i end);
 
 // --- Render functions ---

@@ -9,9 +9,8 @@
 #define EDITOR_MODE_SECTOR 0
 #define EDITOR_MODE_PORTAL 1
 #define EDITOR_MODE_STARTPOS 2
-#define EDITOR_MODE_ENDPOS 3
-#define EDITOR_MODE_PLACING_POINTS 4
-#define EDITOR_MODE_LINE 5
+#define EDITOR_MODE_PLACING_POINTS 3
+#define EDITOR_MODE_LINE 4
 
 typedef struct {
   rgba color;

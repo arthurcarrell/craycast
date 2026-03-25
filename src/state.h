@@ -14,18 +14,15 @@
 typedef struct {
   struct {
     vec2f pos;
-    uint32_t canary;
   } mouse;
 
   SDL_Window *window;
   SDL_Renderer *renderer;
-  SDL_Texture *texture;
   Sector *sectors;
   Actor player;
   Actor end;
   Actor start;
   int sector_count;
-  int line_count;
   int in_menu;
 
   int quit;

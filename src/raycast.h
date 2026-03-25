@@ -1,6 +1,7 @@
 #ifndef RAYCAST_H
 #define RAYCAST_H
 
+#include "line.h"
 #include "sector.h"
 #include "utils.h"
 
@@ -12,6 +13,7 @@
 // line_id is the ID of the line that was hit.
 typedef struct {
   int hit;
+  int hit_portal;
   vec2f pos;
   float distance;
   float rot;
@@ -20,8 +22,8 @@ typedef struct {
 } Raycast;
 
 Raycast raycast_sec(Sector *sector, vec2f pos, float rot, float distance);
-Raycast raycast_sec_with_skip(Sector *sector, vec2f pos, float rot,
-                              float distance, float skip);
+Raycast raycast_sec_skip_line(Sector *sector, vec2f pos, float rot, float distance, int has_touched_portal,
+                              LineSegment *exempt_line);
 Raycast raycast(vec2f pos, float rot, float distance);
 
 #endif

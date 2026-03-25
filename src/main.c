@@ -54,7 +54,9 @@ void init() {
 
 void destroy() {
   printf("Cleaning up\n");
-  save_map(maps.maps[maps.last_selected], state.sectors, state.sector_count, state.start.pos, state.end.pos);
+  if (!state.in_menu) {
+    save_map(maps.maps[maps.last_selected], state.sectors, state.sector_count, state.start.pos, state.end.pos);
+  }
   sdl_destroy();
   font_destroy();
   framebuf_destroy(&framebuf);

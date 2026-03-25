@@ -7,17 +7,16 @@
 #include <math.h>
 
 #define CEIL_DARKNESS_DIV 4
-#define FLOOR_DARKNESS_DIV 4
+#define FLOOR_DARKNESS_DIV 10
+#define WALL_DARKNESS_DIV 1.5
 
 void render_world() {
   // do a raycast for each pixel on the screen
   for (int i = 0; i < WINDOW_WIDTH; i++) {
-    float rot = state.camera.rot - state.camera.fov / 2.0 +
-                (i / (float)WINDOW_WIDTH) * state.camera.fov;
+    float rot = state.camera.rot - state.camera.fov / 2.0 + (i / (float)WINDOW_WIDTH) * state.camera.fov;
     Sector *sec = get_sector_of_point(state.camera.pos);
     if (sec != NULL) {
-      Raycast result =
-          raycast_sec(sec, state.camera.pos, rot, state.camera.dist);
+      Raycast result = raycast_sec(sec, state.camera.pos, rot, state.camera.dist);
 
       if (result.hit) {
         // correct distance to remove the fisheye
@@ -50,14 +49,13 @@ void render_world() {
 
       Sector *currsec = &state.sectors[result.sector_id];
 
-      tile_size = currsec->ceil_height - currsec->floor_height;
+      tile_size = 20;
       float height = (tile_size / result.distance) * projection_dist;
       int start = WINDOW_HEIGHT / 2.0 - height / 2;
       int end = WINDOW_HEIGHT / 2.0 + height / 2;
       rgba color = state.sectors[result.sector_id].lines[result.line_id].color;
 
-      int darkness =
-          clampf((result.distance / 1.5f) - currsec->light_modifer, 255, 0);
+      int darkness = clampf((result.distance / WALL_DARKNESS_DIV) - currsec->light_modifer, 255, 0);
 
       int r = (color.r - darkness) > 0 ? (color.r - darkness) : 0;
       int g = (color.g - darkness) > 0 ? (color.g - darkness) : 0;
@@ -115,8 +113,6 @@ void render_world() {
   }
   // give the framebuffer the wall info
   framebuf_column_optimised(&framebuf, top, bottom, wallcolor, WINDOW_WIDTH);
-  framebuf_column_optimised(&framebuf, ceil_top, ceil_bottom, ceilcolor,
-                            WINDOW_WIDTH);
-  framebuf_column_optimised(&framebuf, floor_top, floor_bottom, floorcolor,
-                            WINDOW_WIDTH);
+  framebuf_column_optimised(&framebuf, ceil_top, ceil_bottom, ceilcolor, WINDOW_WIDTH);
+  framebuf_column_optimised(&framebuf, floor_top, floor_bottom, floorcolor, WINDOW_WIDTH);
 }
