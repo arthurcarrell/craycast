@@ -19,8 +19,8 @@ int load_font(char *path, SDL_Renderer *renderer) {
     exit(1);
   }
 
-  font.width = font.surface->w;
-  font.height = font.surface->h;
+  font.width = 8;
+  font.height = 9;
 
   strcpy(font.chars, "0123456789abcdefghijklmnopqrstuvwxyz!?.\":/%()+-F");
   return 1;
@@ -42,9 +42,9 @@ void write_character(vec2f pos, char chr, rgba color, int size) {
     return;
   }
 
-  int starty = index * 9;
-  for (int y = 0; y < 9; y++) {
-    for (int x = 0; x < 8; x++) {
+  int starty = index * font.height;
+  for (int y = 0; y < font.height; y++) {
+    for (int x = 0; x < font.width; x++) {
       Uint8 a;
       SDL_ReadSurfacePixel(font.surface, x, starty + y, NULL, NULL, NULL, &a);
 
@@ -66,15 +66,15 @@ void write_string(char *string, vec2f pos, rgba color, int size) {
   for (int i = 0; i < length; i++) {
     if (string[i] != '\n') {
       write_character(pos, string[i], color, size);
-      pos.x += gap + (9 * size);
+      pos.x += gap + (font.width * size);
     } else {
       pos.x = originalx;
-      pos.y += 10 * size;
+      pos.y += font.height * size;
     }
   }
 }
 
-int get_text_width(int text_size, int size) { return 1 + 9 * size * text_size; }
+int get_text_width(int text_size, int size) { return 1 + font.width * size * text_size; }
 
 int font_init(SDL_Renderer *renderer) {
   char *path = malloc((strlen("font") + 15) * sizeof(char));
