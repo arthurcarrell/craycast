@@ -14,12 +14,8 @@
 
 typedef struct {
   rgba color;
-  int even_click;
-  vec2f last_click_pos;
   int map_mode;
   int mode;
-  int last_line_id;
-  int last_sector_id;
   int current_sector;
   vec2f points_placed[20];
   int point_count;
