@@ -67,8 +67,6 @@ void handle_line(char *line) {
   } else if (strcmp(tokens[0], "spwn") == 0) {
     state.start.pos = (vec2f){atof(tokens[1]), atof(tokens[2])};
     state.player.pos = state.start.pos;
-  } else if (strcmp(tokens[0], "end") == 0) {
-    state.end.pos = (vec2f){atof(tokens[1]), atof(tokens[2])};
   }
 
   // free the line

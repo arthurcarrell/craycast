@@ -23,7 +23,6 @@ void state_init() {
 
   // -- ACTORS --
   state.player = (Actor){state.camera.pos, 0};
-  state.end = (Actor){0};
   state.start = (Actor){0};
 
   // --- Sectors ---

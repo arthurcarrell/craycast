@@ -20,7 +20,6 @@ typedef struct {
   SDL_Renderer *renderer;
   Sector *sectors;
   Actor player;
-  Actor end;
   Actor start;
   int sector_count;
   int in_menu;

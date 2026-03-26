@@ -26,11 +26,8 @@ void write_sector(FILE *fptr, Sector sector) {
   }
 }
 
-void save_pos(FILE *fptr, vec2f start, vec2f end) {
-  fprintf(fptr, "spwn %f %f\n", start.x, start.y);
-  fprintf(fptr, "end %f %f\n", end.x, end.y);
-}
-int save_map(char *name, Sector *sectors, int count, vec2f start, vec2f end) {
+void save_pos(FILE *fptr, vec2f start) { fprintf(fptr, "spwn %f %f\n", start.x, start.y); }
+int save_map(char *name, Sector *sectors, int count, vec2f start) {
   // create the path
   char *path = malloc(strlen(name) + 6 * sizeof(char));
   sprintf(path, "maps/%s", name);
@@ -52,7 +49,7 @@ int save_map(char *name, Sector *sectors, int count, vec2f start, vec2f end) {
   }
 
   // now that the file is created write the data to it
-  save_pos(fptr, start, end);
+  save_pos(fptr, start);
 
   for (int i = 0; i < count; i++) {
     fprintf(fptr, "\n");
