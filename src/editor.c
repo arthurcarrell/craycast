@@ -162,15 +162,15 @@ void editor_on_click() {
       editor.mode = EDITOR_MODE_PLACING_POINTS;
       create_point(state.mouse.pos);
     }
-  } else if (editor.map_mode && editor.mode == EDITOR_MODE_PORTAL) {
+  } else if (editor.mode == EDITOR_MODE_PORTAL) {
     connect_lines_for_portal(MOUSE_TOLERANCE);
-  } else if (editor.map_mode && editor.mode == EDITOR_MODE_PLACING_POINTS) {
+  } else if (editor.mode == EDITOR_MODE_PLACING_POINTS) {
     create_point(state.mouse.pos);
     printf("creating point\n");
-  } else if (editor.map_mode && editor.mode == EDITOR_MODE_STARTPOS && get_sector_of_point(state.mouse.pos) != NULL) {
+  } else if (editor.mode == EDITOR_MODE_STARTPOS && get_sector_of_point(state.mouse.pos) != NULL) {
     state.start.pos = state.mouse.pos;
     editor.mode = EDITOR_MODE_SECTOR;
-  } else if (editor.map_mode && editor.mode == EDITOR_MODE_LINE && get_sector_of_point(state.mouse.pos) != NULL) {
+  } else if (editor.mode == EDITOR_MODE_LINE && get_sector_of_point(state.mouse.pos) != NULL) {
     editor_create_line(get_sector_of_point(state.mouse.pos));
   }
 }
@@ -193,7 +193,7 @@ void editor_keypress(int key) {
         line->portal->flipped = !line->portal->flipped;
       }
     }
-  } else if (key == SDLK_S && editor.point_count > 2 && editor.map_mode) {
+  } else if (key == SDLK_S && editor.point_count > 2) {
     create_sector_with_points();
     printf("created sector\n");
     editor.mode = EDITOR_MODE_SECTOR;
