@@ -44,10 +44,6 @@ void create_point(vec2f pos) {
   editor.point_count++;
 }
 
-// create a portal connecting the two last clicked sectors.
-// NOTE: could change this to two functions: one that just makes a portal with two lines and one that actually gets the
-// lines
-
 // Create a portal with entry as the entry and dest as the exit. - Calling 'dest' 'exit' was tempting but it overrides
 // the exit() function, I still technically could but its bad practice.
 void create_portal(LineSegment *entry, LineSegment *dest) {
