@@ -375,6 +375,5 @@ void render_map() {
 void editor_init() {
   editor = (Editor){0};
   editor.map_mode = 1;
-  editor.color = (rgba){255, 255, 255, 255};
   editor.current_sector = 0;
 }

@@ -13,7 +13,6 @@
 #define EDITOR_MODE_LINE 4
 
 typedef struct {
-  rgba color;
   int map_mode;
   int mode;
   int current_sector;
