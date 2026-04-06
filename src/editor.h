@@ -15,7 +15,6 @@
 typedef struct {
   int map_mode;
   int mode;
-  int current_sector;
   vec2f points_placed[20];
   int point_count;
 } Editor;

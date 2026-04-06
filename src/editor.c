@@ -178,12 +178,7 @@ void editor_on_click() {
 // runs when any key is pressed while the editor is open
 void editor_keypress(int key) {
   if (key == SDLK_X) {
-    if (editor.mode == EDITOR_MODE_PORTAL) {
-      editor.mode = EDITOR_MODE_SECTOR;
-    } else {
-      editor.point_count = 0;
-      editor.mode = EDITOR_MODE_PORTAL;
-    }
+    editor.mode = EDITOR_MODE_PORTAL;
   } else if (key == SDLK_F) {
     if (get_sector_of_point(state.mouse.pos) != NULL) {
       LineSegment *line = get_line_at_point(state.mouse.pos, get_sector_of_point(state.mouse.pos)->lines,
@@ -218,6 +213,10 @@ void draw_editor_text() {
     write_string("map mode", (vec2f){WINDOW_WIDTH - (10 * 9) - 1, 11}, (rgba){255, 255, 255, 255}, 1);
   } else if (editor.mode == EDITOR_MODE_PLACING_POINTS) {
     write_string("creating sector", (vec2f){WINDOW_WIDTH - (10 * 15) - 1, 11}, (rgba){255, 255, 255, 255}, 1);
+  }
+
+  if (editor.mode != EDITOR_MODE_SECTOR) {
+    write_string("press esc to stop", (vec2f){WINDOW_WIDTH - (10 * 17) - 1, 22}, (rgba){255, 255, 255, 255}, 1);
   }
 
   if (state.start.pos.x == 0 && state.start.pos.y == 0) {
@@ -375,5 +374,4 @@ void render_map() {
 void editor_init() {
   editor = (Editor){0};
   editor.map_mode = 1;
-  editor.current_sector = 0;
 }
