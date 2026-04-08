@@ -2,7 +2,7 @@
 #define TITLE_H
 
 #include <stdlib.h>
-
+  
 typedef struct {
   char **maps;
   int amount;

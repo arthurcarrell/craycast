@@ -16,6 +16,7 @@ void write_line(FILE *fptr, LineSegment *lineseg) {
   }
 }
 
+
 void write_sector(FILE *fptr, Sector sector) {
   fprintf(fptr, "sec %d %d %d %d %d %d %d %d %d %d %d\n", sector.id, sector.line_count, sector.ceil_color.r,
           sector.ceil_color.g, sector.ceil_color.b, sector.ceil_color.a, sector.floor_color.r, sector.floor_color.g,
@@ -26,7 +27,10 @@ void write_sector(FILE *fptr, Sector sector) {
   }
 }
 
-void save_pos(FILE *fptr, vec2f start) { fprintf(fptr, "spwn %f %f\n", start.x, start.y); }
+void save_pos(FILE *fptr, vec2f start) { 
+  fprintf(fptr, "spwn %f %f\n", start.x, start.y); 
+}
+
 int save_map(char *name, Sector *sectors, int count, vec2f start) {
   // create the path
   char *path = malloc(strlen(name) + 6 * sizeof(char));

@@ -40,7 +40,10 @@ void render_world() {
   uint32_t ceilcolor[WINDOW_WIDTH];
   uint32_t floorcolor[WINDOW_WIDTH];
 
+  // set the size of each tile.
   int tile_size = 20;
+
+  // fix the distance
   float projection_dist = (WINDOW_WIDTH / 2.0) / tanf(state.camera.fov / 2.0);
   // run through each raycast and draw a line on the screen for it.
   for (int i = 0; i < WINDOW_WIDTH; i++) {
@@ -49,7 +52,6 @@ void render_world() {
 
       Sector *currsec = &state.sectors[result.sector_id];
 
-      tile_size = 20;
       float height = (tile_size / result.distance) * projection_dist;
       int start = WINDOW_HEIGHT / 2.0 - height / 2;
       int end = WINDOW_HEIGHT / 2.0 + height / 2;
@@ -111,7 +113,7 @@ void render_world() {
       floor_bottom[i] = -1;
     }
   }
-  // give the framebuffer the wall info
+  // give the framebuffer the info
   framebuf_column_optimised(&framebuf, top, bottom, wallcolor, WINDOW_WIDTH);
   framebuf_column_optimised(&framebuf, ceil_top, ceil_bottom, ceilcolor, WINDOW_WIDTH);
   framebuf_column_optimised(&framebuf, floor_top, floor_bottom, floorcolor, WINDOW_WIDTH);

@@ -14,7 +14,7 @@ void event_mouse_down() {
   }
 }
 
-// Keyboard input
+// Ran each frame, gets the input of the keyboard
 void get_keyboard_input() {
   // get the key pressed
   const bool *key_states = SDL_GetKeyboardState(0);
@@ -41,6 +41,7 @@ void get_keyboard_input() {
   }
 }
 
+// Ran every time a key is pressed
 void event_key_down(int key) {
   if (editor.map_mode) {
     editor_keypress(key);

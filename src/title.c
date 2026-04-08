@@ -27,7 +27,7 @@ char **get_all_maps(int *size) {
     return NULL;
   }
 
-  // opening the directory was a success, go through each file with a '.map' extension, and format the name
+  // opening the directory was a success, go through each file with a '.map' extension
   while ((entry = readdir(directory)) != NULL) {
     // get the last 4 letters, if it is .map then its valid
     char *name = entry->d_name;
@@ -129,6 +129,7 @@ void title_destroy() {
   free(maps.maps);
   maps.amount = 0;
 }
+
 void render_title() {
   char *title = "c raycast experiment";
   write_string(title, (vec2f){WINDOW_WIDTH / 2 - (get_text_width(strlen(title), 3) / 2), 100},

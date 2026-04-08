@@ -43,6 +43,7 @@ void create_line(char **tokens) {
          "color: (%d,%d,%d,%d)\n",
          id, sector_id, start.x, start.y, end.x, end.y, color.r, color.g, color.b, color.a);
 }
+
 void handle_line(char *line) {
   // split the line into spaces, as that is what is used for the delimiter
   char *token = strtok(line, " ");
@@ -59,7 +60,6 @@ void handle_line(char *line) {
     token = strtok(NULL, " ");
   }
 
-  // TODO: stuff
   if (strcmp(tokens[0], "sec") == 0) {
     create_sector(tokens);
   } else if (strcmp(tokens[0], "lineseg") == 0) {

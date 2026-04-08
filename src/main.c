@@ -126,8 +126,6 @@ int main(int argc, char *argv[]) {
       SDL_Delay(MIN_MS - state.delta);
       state.delta = MIN_MS;
     }
-
-    // printf("fps: %.2f \n", (1000.0 / state.delta));
   }
 
   // The program has now ended, destroy SDL

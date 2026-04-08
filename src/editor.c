@@ -71,7 +71,9 @@ void create_portal(LineSegment *entry, LineSegment *dest) {
 
     dest->flags |= LINE_FLAG_PORTAL_EXIT;
   }
+
 }
+
 
 void connect_lines_for_portal(int tolerance) {
   // Now I couldve done this with just get_sector_of_point and get_line_at_point, but this means your mouse
@@ -134,12 +136,13 @@ void editor_create_line(Sector *sector) {
                                                       sector->line_count,
                                                       sector->id,
                                                       LINE_FLAG_INTERNAL,
-                                                      NULL};
+                                                      .portal=NULL};
     sector->line_count++;
     editor.mode = EDITOR_MODE_SECTOR;
     editor.point_count = 0;
   }
 }
+
 
 // runs when any click happens while the editor is open
 void editor_on_click() {
@@ -182,7 +185,7 @@ void editor_keypress(int key) {
   } else if (key == SDLK_F) {
     if (get_sector_of_point(state.mouse.pos) != NULL) {
       LineSegment *line = get_line_at_point(state.mouse.pos, get_sector_of_point(state.mouse.pos)->lines,
-                                            get_sector_of_point(state.mouse.pos)->line_count, 1000);
+                                            get_sector_of_point(state.mouse.pos)->line_count, MOUSE_TOLERANCE);
 
       if (line != NULL && line->portal != NULL) {
         line->portal->flipped = !line->portal->flipped;
@@ -230,9 +233,9 @@ void draw_mouse_string(LineSegment line) {
   char data[100];
   sprintf(data, "sector id: %d\nline id: %d", line.sector_id, line.id);
   write_string(data, (vec2f){state.mouse.pos.x + 5, state.mouse.pos.y - 20}, (rgba){255, 255, 255, 255}, 1);
-  if (editor.mode != EDITOR_MODE_PORTAL) {
+  if (editor.mode == EDITOR_MODE_SECTOR) {
     write_string("click to change line color", (vec2f){state.mouse.pos.x + 5, state.mouse.pos.y}, line.color, 1);
-  } else {
+  } else if (editor.mode == EDITOR_MODE_PORTAL) {
     if (editor.point_count == 0) {
       write_string("click to set as portal entrance", (vec2f){state.mouse.pos.x + 5, state.mouse.pos.y},
                    (rgba){55, 128, 128, 255}, 1);
@@ -249,7 +252,8 @@ void draw_mouse_string(LineSegment line) {
 }
 
 /* --- DRAWING FUNCTIONS --- */
-// these functions display stuff in the editor, such as the sectors, the start pos, the player pos etc...
+// these functions display stuff in the editor, such as the sectors/lines, the start pos, the player pos etc...
+
 void draw_sector_creation() {
   for (int i = 0; i < editor.point_count; i++) {
     vec2f startpos = editor.points_placed[i];
