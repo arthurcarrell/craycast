@@ -14,7 +14,7 @@ void state_init() {
 
   state.camera.pos = (vec2f){50, WINDOW_HEIGHT / 2};
   state.camera.rot = 0.0;
-  state.camera.fov = deg_to_radians(1);
+  state.camera.fov = deg_to_radians(60);
   state.camera.dist = 400; // darkness means that after ~300-400 nothing will show anyway
   state.in_menu = 1;
   // --- MISC ---

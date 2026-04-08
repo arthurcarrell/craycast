@@ -17,6 +17,8 @@ typedef struct {
   int mode;
   vec2f points_placed[20];
   int point_count;
+  int entry_portal_id;
+  int entry_portal_sector;
 } Editor;
 
 extern Editor editor;

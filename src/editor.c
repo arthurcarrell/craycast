@@ -88,21 +88,19 @@ void connect_lines_for_portal(int tolerance) {
     return;
   }
   // clicked on a line
-  if (editor.point_count <= 0) {
+  if (editor.entry_portal_id == -1) {
     // first click, so we are drawing a portal, add the point
-    create_point(line->start);
+    editor.entry_portal_id = line->id;
+    editor.entry_portal_sector = line->sector_id;
   } else {
     // already clicked somewhere, so get the line at the first coordinate and then create the portal
-    Sector *entry_sec = get_sector_of_point(editor.points_placed[0]);
-    if (entry_sec == NULL)
-      return;
-    LineSegment *entry = get_line_at_point(editor.points_placed[0], entry_sec->lines, entry_sec->line_count, tolerance);
+    LineSegment *entry = &state.sectors[editor.entry_portal_sector].lines[editor.entry_portal_id];
     if (entry != NULL) {
       create_portal(entry, line);
     }
     // disable portal mode
     editor.mode = EDITOR_MODE_SECTOR;
-    editor.point_count = 0;
+    editor.entry_portal_id = -1;
   }
 }
 // change the line color of the line clicked
@@ -200,6 +198,7 @@ void editor_keypress(int key) {
   } else if (key == SDLK_ESCAPE) { // reset to start
     editor.mode = EDITOR_MODE_SECTOR;
     editor.point_count = 0;
+    editor.entry_portal_id = -1;
   }
 }
 
@@ -233,7 +232,7 @@ void draw_mouse_string(LineSegment line) {
   if (editor.mode != EDITOR_MODE_PORTAL) {
     write_string("click to change line color", (vec2f){state.mouse.pos.x + 5, state.mouse.pos.y}, line.color, 1);
   } else {
-    if (editor.point_count == 0) {
+    if (editor.entry_portal_id == -1) {
       write_string("click to set as portal entrance", (vec2f){state.mouse.pos.x + 5, state.mouse.pos.y},
                    (rgba){55, 128, 128, 255}, 1);
     } else {
@@ -293,9 +292,11 @@ void draw_helper_lines() {
       color = (rgba){128, 128, 128, 128};
     }
     framebuf_line_s(&framebuf, startpos.x, startpos.y, endpos.x, endpos.y, color);
-  } else if (editor.mode == EDITOR_MODE_PORTAL && editor.point_count > 0) {
-    framebuf_line_s(&framebuf, editor.points_placed[0].x, editor.points_placed[0].y, state.mouse.pos.x,
-                    state.mouse.pos.y, (rgba){128, 128, 128, 128});
+  } else if (editor.mode == EDITOR_MODE_PORTAL && editor.entry_portal_id != -1) {
+    // calculate start draw point
+    LineSegment *line = &state.sectors[editor.entry_portal_sector].lines[editor.entry_portal_id];
+    vec2f drawpos = (vec2f){(line->start.x + line->end.x) / 2, (line->start.y + line->end.y) / 2};
+    framebuf_line_s(&framebuf, drawpos.x, drawpos.y, state.mouse.pos.x, state.mouse.pos.y, (rgba){128, 128, 128, 128});
   }
 }
 
@@ -374,4 +375,5 @@ void render_map() {
 void editor_init() {
   editor = (Editor){0};
   editor.map_mode = 1;
+  editor.entry_portal_id = -1;
 }
