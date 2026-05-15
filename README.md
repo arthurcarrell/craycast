@@ -1,6 +1,10 @@
-# C Raycaster
+# C Raycaster with Portals
 
-A simple raycasting engine/thing made with C and SDL3.
+This was my A-Level Coursework (NEA) for Computer Science. Its recommended to do your project in C#, but I did it in C.
+I got 84% for the actual coursework (my conclusion/analysis should've been better), but the project itself got full marks.
+This isnt really a game, but more of a tech demo.
+
+The project allows you to load and edit custom maps/run them. You can create sectors, lines and portals to connect lines and sectors together.
 
 ## Installation
 
@@ -12,16 +16,30 @@ A simple raycasting engine/thing made with C and SDL3.
 
 ## Use
 
-When you first open the program you will be in 'World Mode', Press Z to toggle between World Mode and 'Map Mode'.
+(There isnt actually a way to create maps from scratch in the project, so create an empty .map file in the maps directory in the project)
 
-In map mode, clicking twice will create a line between those two points where you clicked. You can place up to 100 lines.
+Press the 'Z' key to move between World Mode (walking around the map) and Map Mode (the map editor)
 
-In world mode, use the WASD keys to move around the world, and the arrows keys to adjust your rotation.
+## Running the Map
+Use WASD to move and the left and right arrow keys to look around.
+
+## Editing a Map
+At any time, while doing anything, pressing 'ESC' will cancel the task. Once you do something, you cannot undo it.
+
+Clicking somewhere will enter sector creation mode. Click to define points on the map and then press S to join them all together to create a sector.
+
+Press B and then click inside of a sector to set the spawn point of the player.
+
+Pressing L and then clicking twice will create a standalone line in a sector. The line must be in bounds.
+
+Clicking on a line will change its color.
+
+### Portals
+Press X and then click on a line to set it as the entrance for a portal. Click on another line to set that line as the exit. Portals are one-way, but you can make them two-way by doing the same process but in reverse.
+
+Portals can connect to any line at any rotation, but they might start to look weird if one of the portals is larger than the other.
+
 
 ## Plans
 
-1. Change the program to use the lines properly, currently they arent 'grabbed' by the raycaster and are just used as collision points.
-2. Add textures to the lines.
-3. Add collision to the lines, this should hopefully be quite easy.
-4. Add portals
-5. Maybe add sectors?? this project may be getting too big at that point.
+Probably none, might come back to this once my A-Levels are completely finished.
